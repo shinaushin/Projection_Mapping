@@ -3,7 +3,6 @@ import cv2
 import cv2.aruco as aruco
 import pyrealsense2 as rs
 
-
 pipeline = rs.pipeline()
 
 config = rs.config()
@@ -24,11 +23,15 @@ dist = [0, 0, 0, 0, 0]
 
 try:
     # User input of how long to do calibration for
+    num_pts = raw_input("How many pivot calibration points do you want to use?")
 
     aruco_dict = aruco.Dictionary_get(aruco.DICT_6X6_250)
     parameters = aruco.DetectorParameters_create()
 
-    while (): # Time passed is less than user input
+    i = 0
+    A = []
+    b = []
+    while (i < num_pts): # Time passed is less than user input
         ret, frame = cap.read()
         # operations on the frame come here
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -41,11 +44,17 @@ try:
             rvec, tvec ,_ = aruco.estimatePoseSingleMarkers(corners, 0.05, mtx, dist) #Estimate pose of each marker and return the values rvet and tvec---different from camera coefficients
             #(rvec-tvec).any() # get rid of that nasty numpy value array error
 
+            rotMat, _  = cv2.Rodrigues(rvec)
             # ...
+
+        i = i + 1;
 
     # When everything done, release the capture
     cap.release()
     cv2.destroyAllWindows()
+
+    # Solve least-squares Ax = b
+    x = np.linalg.lstsq(A,b) # x[0:2] = p_t, x[3:5] = p_pivot
 
 finally:
     pipeline.stop()
