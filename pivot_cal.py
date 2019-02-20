@@ -7,19 +7,19 @@ pipeline = rs.pipeline()
 
 config = rs.config()
 config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
-config.enable_stream(rs.stream.color(640, 480, rs.format.bgr8, 30);
+config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30);
 
 profile = pipeline.start(config)
 
 depth_sensor = profile.get_device().first_depth_sensor()
 depth_scale = depth_sensor.get_depth_scale()
 
-align_to = rs.streamcolor
+align_to = rs.stream.color
 align = rs.align(align_to)
 
 # Intrinsic camera parameters of RealSense camera
-mtx = [ [644.31, 0, 643.644], [0, 644.31, 352.594], [0, 0, 1]]
-dist = [0, 0, 0, 0, 0]
+mtx = np.asarray( [ [644.31, 0, 643.644], [0, 644.31, 352.594], [0, 0, 1] ] )
+dist = np.asarray( [0, 0, 0, 0, 0] )
 
 try:
     # User input of how long to do calibration for
@@ -32,7 +32,12 @@ try:
     A = []
     b = []
     while (i < num_pts): # Time passed is less than user input
-        ret, frame = cap.read()
+        frames = pipeline.wait_for_frames()
+        aligned_frames = align.process(frames)
+        color_frame = aligned_frames.get_color_frame()
+        color_image = np.asanyarray(color_frame.get_data())
+        frame = color_image
+
         # operations on the frame come here
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
