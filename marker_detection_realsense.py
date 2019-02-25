@@ -8,7 +8,7 @@ pipeline = rs.pipeline()
 
 config = rs.config()
 config.enable_stream(rs.stream.depth, 1280, 720, rs.format.z16, 30)
-config.enable_stream(rs.stream.color, 1280, 720, rs.format.bgr8, 30);
+config.enable_stream(rs.stream.color, 1280, 720, rs.format.bgr8, 30)
 
 profile = pipeline.start(config)
 
@@ -35,7 +35,7 @@ try:
         aruco_dict = aruco.Dictionary_get(aruco.DICT_6X6_250)
         parameters = aruco.DetectorParameters_create()
 
-        #lists of ids and the corners beloning to each id
+        #lists of ids and the corners belonging to each id
         corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, aruco_dict, parameters=parameters)
 
 
