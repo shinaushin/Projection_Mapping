@@ -2,7 +2,6 @@ import numpy as np
 import cv2
 import cv2.aruco as aruco
 import pyrealsense2 as rs
-
 import Realsense
 
 
@@ -16,6 +15,7 @@ def setup(cam):
     # Detect all markers and calculate transformation between each one
     while (len(tf_dict) < num_markers-1):
         ids, rvecs, tvecs = cam.detect_markers_realsense()
+        ids, rvecs, tvecs = [x,y,z for x,y,z in sorted(zip(ids, rvecs, tvecs))]
         for i in range(len(ids)-1):
             if ( ids[i+1] - ids[i] == 1 and (ids[i], ids[i+1]) not in tf_dict.keys() ):
                 tf_dict[(ids[i], ids[i+1])] = []

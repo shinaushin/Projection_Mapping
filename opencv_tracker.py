@@ -4,14 +4,10 @@ import cv2
 from imutils.video import VideoStream
 from imutils.video import FPS
 import imutils
+import Realsense
 
-pipeline = rs.pipeline()
-
-config = rs.config()
-config.enable_stream(rs.stream.depth, 640, 360, rs.format.z16, 30)
-config.enable_stream(rs.stream.color, 640, 360, rs.format.bgr8, 30)
-
-profile = pipeline.start(config)
+cam = Realsense()
+profile = cam.pipeline.start(config)
 
 depth_sensor = profile.get_device().first_depth_sensor()
 depth_scale = depth_sensor.get_depth_scale()
@@ -44,7 +40,7 @@ print("Initializing tracking system...")
 try:
   print("Press s to put bounding box around desired object.")
   while True:
-    frames = pipeline.wait_for_frames()
+    frames = cam.pipeline.wait_for_frames()
 
     aligned_frames = align.process(frames)
 
@@ -91,4 +87,4 @@ try:
       break
 
 finally:
-  pipeline.stop()
+  cam.pipeline.stop()

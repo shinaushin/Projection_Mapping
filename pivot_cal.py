@@ -23,7 +23,7 @@ b = []
 while (i < num_pts): # Time passed is less than user input
     input("Move the tool to new pose, and press enter to record.");
 
-    cam.detect_markers_realsense()
+    ids, rvecs, tvecs = cam.detect_markers_realsense()
 
     i = i + 1;
 
