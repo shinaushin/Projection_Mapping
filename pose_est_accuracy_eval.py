@@ -45,12 +45,12 @@ def eval_acc():
     
     datapts = 30
     finalDeg = 170
-    deg = 20
+    deg = 10
 
     pos_truth = {}
-    rot_truth = {}
+    rot_vec = {}
     pos_calc = {}
-    rot_calc = {}
+    rot_theta = {}
 
     profile = cam.pipeline.start(cam.config)
     depth_sensor = profile.get_device().first_depth_sensor()
@@ -65,13 +65,13 @@ def eval_acc():
     # keep track of how many frames we are not able to detect marker
     try:
         while (deg < finalDeg):
-            print(deg)
+            print(str(deg) + "\n")
             raw_input('When ready to start taking data, press Enter: ')
-        
+
             groundTruth_pos = []
             calculated_pos = []
-            groundTruth_rot = []
-            calculated_rot = []
+            vec_item = []
+            theta_item = []
             detectNum = 0
             while (detectNum < datapts):
                 frames = cam.pipeline.wait_for_frames()
@@ -80,14 +80,10 @@ def eval_acc():
                 color_image = np.asanyarray(color_frame.get_data())
                 frame = color_image
                 frame = cv2.undistort(frame, cam.mtx, cam.dist, None, cam.newcameramtx)
-                cv2.imshow('img', frame)
-                cv2.waitKey(1)
                 gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
                 ret, corners = cv2.findChessboardCorners(gray, (4,3), None)
 
                 if ret == True:
-                    detectNum = detectNum + 1;
-                    print(detectNum)
                     corners2 = cv2.cornerSubPix(gray, corners, (11,11), (-1,-1), cam.criteria)
                     img = cv2.drawChessboardCorners(frame, (4,3), corners2, ret)
  
@@ -103,7 +99,8 @@ def eval_acc():
                     markerPos = rot.dot(pt) + tvec 
 
                     # rotate about X-axis by 180 degrees, then Z-axis by -90 degrees
-                    markerRot = rotToEuler(np.dot( rot, eulerToRot(math.pi, 0, math.pi/2) ))
+                    markerRot = np.dot( rot, eulerToRot(math.pi, 0, math.pi/2) )
+                    markerRot, _ = cv2.Rodrigues(markerRot)
 
                     # find marker using aruco package
                     aruco_dict = aruco.Dictionary_get(aruco.DICT_6X6_250)
@@ -121,38 +118,48 @@ def eval_acc():
                             aruco.drawAxis(img, cam.newcameramtx, cam.dist, rvecs[i], tvecs[i], 0.1)
                     else:
                         cv2.putText(img, "No Ids", (0,64), font, 1, (0,255,0),2,cv2.LINE_AA)    
-
+                    
                     cv2.imshow('img', img)
-                    cv2.waitKey(10)
+                    cv2.waitKey(1)
+                    
+                    if np.all(ids != None):
+                        rvec = rvecs[0][0]
+                        if ((rvec[0] * markerRot[0]) > 0 and (rvec[1] * markerRot[1]) > 0 and (rvec[2] * markerRot[2]) > 0) or ((rvec[0] * markerRot[0] < 0 and (rvec[1] * markerRot[1]) < 0) and (rvec[2] * markerRot[2] < 0)):
+                            groundTruth_pos.append(markerPos)
+                            calculated_pos.append(tvecs[0])
 
-                    # compare 3d position and orientation, calculate error and std dev
-                    #print("Ground truth pos: ",  markerPos)
-                    #print("Calculated pos: ", tvecs[0])
-
-                    #print("Ground truth orientation: ", markerRot)
-                    rotm, _ = cv2.Rodrigues(rvecs[0])
-                    calc_vec = rotToEuler(rotm)
-                    #print("Calculated orientation: ", calc_vec)
-                    #print("\n")
-
-                    groundTruth_pos.append(markerPos)
-                    calculated_pos.append(tvecs[0])
-                    groundTruth_rot.append(markerRot)
-                    calculated_rot.append(calc_vec)
-
+                            if (rvec[0] * markerRot[0] < 0):
+                                rvec = -rvec
+                            
+                            rotmat, _ = cv2.Rodrigues(rvec)
+                            markerRotMat, _ = cv2.Rodrigues(markerRot)
+                            nearIdentity = np.matmul(rotmat.transpose(), markerRotMat)
+                            # print(nearIdentity)
+                            nearIdentity_vec, _ = cv2.Rodrigues(nearIdentity)
+                            # print(nearIdentity_vec)
+                            vec_item.append(nearIdentity_vec)
+                            theta = math.acos( (np.trace(nearIdentity) - 1.0) / 2.0) * 180 / 3.1415
+                            print(theta)
+                            theta_item.append(theta)
+                            
+                            detectNum = detectNum + 1
+                            print(detectNum)
+                        else:
+                            print("unstable")
+                     
+            print("\n")
             pos_truth[deg] = groundTruth_pos
             pos_calc[deg] = calculated_pos
-            rot_truth[deg] = groundTruth_rot
-            rot_calc[deg] = calculated_rot
+            rot_vec[deg] = vec_item
+            rot_theta[deg] = theta_item
 
             deg = deg + 10
             cv2.destroyAllWindows()
 
-        with open('acc_eval.pickle', 'wb') as f:
-            pickle.dump([pos_truth, pos_calc, rot_truth, rot_calc], f)
+        with open('acc_eval2.pickle', 'wb') as f:
+            pickle.dump([pos_truth, pos_calc, rot_vec, rot_theta], f)
     
     finally:
         cam.pipeline.stop()
 
 eval_acc()
-

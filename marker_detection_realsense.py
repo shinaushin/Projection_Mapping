@@ -6,7 +6,7 @@ from Realsense import RealSense as Realsense
 
 
 cam = Realsense()
-
+cam.access_intr_and_extr()
 profile = cam.pipeline.start(cam.config)
 depth_sensor = profile.get_device().first_depth_sensor()
 depth_scale = depth_sensor.get_depth_scale()
@@ -20,7 +20,7 @@ try:
         color_frame = aligned_frames.get_color_frame()
         color_image = np.asanyarray(color_frame.get_data())        
         frame = color_image
-
+        font = cv2.FONT_HERSHEY_SIMPLEX
         corners, ids, rvecs, tvecs = cam.detect_markers_realsense(frame)
         if np.all(ids != None):
 
@@ -33,7 +33,6 @@ try:
             for i in range(0, ids.size):
                 strg += str(ids[i][0])+', '
 
-            font = cv2.FONT_HERSHEY_SIMPLEX
             cv2.putText(frame, "Id: " + strg, (0,25), font, 1, (0,255,0),2,cv2.LINE_AA)
 
 	    ###### Output marker  positions in camera frame ######

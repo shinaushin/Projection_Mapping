@@ -11,16 +11,18 @@ class RealSense:
         self.w = 1280
         self.config.enable_stream(rs.stream.depth, self.w, self.h, rs.format.z16, 30)
         self.config.enable_stream(rs.stream.color, self.w, self.h, rs.format.bgr8, 30)
-
-        # Default intrinsic camera parameters
-        # self.mtx = np.asarray( [ [644.31, 0, 643.644], [0, 644.31, 352.594], [0, 0, 1] ] )
-        # self.dist = np.asarray( [0, 0, 0, 0, 0] )
+        self.config.enable_stream(rs.stream.infrared, 1, self.w, self.h, rs.format.y8, 30)
+        self.config.enable_stream(rs.stream.infrared, 2, self.w, self.h, rs.format.y8, 30)
 
         # OpenCV calibrated intrinsic parameters - 20 images, RMS: 0.566338583233
         self.mtx = np.asarray( [ [885.88621413, 0, 627.67489027], [0, 889.29330139, 330.51422313], [0, 0, 1] ] )
         self.dist = np.asarray( [0.09543156, -0.3296279, -0.01296923, -0.00432939, 0.18224466] )
-
         self.newcameramtx, _ = cv2.getOptimalNewCameraMatrix(self.mtx, self.dist, (self.w,self.h), 1, (self.w,self.h))
+        
+        self.IRmtx = np.asarray( [ [662.55704262, 0, 652.61212726], [0, 666.17830383, 291.70354751], [0, 0, 1] ] )
+        self.IRdist = np.asarray( [-0.11005826, 0.23544585, -0.0173338, -0.00744232, -0.18301952] )
+        self.newIRmtx, _ = cv2.getOptimalNewCameraMatrix(self.IRmtx, self.IRdist, (self.w, self.h), 1, (self.w, self.h))
+
         self.criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
 
@@ -37,11 +39,18 @@ class RealSense:
 
         return corners, ids, rvecs, tvecs
 
-    def access_intrinsics(self):
+    def access_intr_and_extr(self):
         cfg = self.pipeline.start()
-        profile = cfg.get_stream(rs.stream.depth)
-        intr = profile.as_video_stream_profile().get_intrinsics()
+        color = cfg.get_stream(rs.stream.color)
+        intr = color.as_video_stream_profile().get_intrinsics()
         print(intr)
+        
+        depth = cfg.get_stream(rs.stream.depth)
+        intr2 = depth.as_video_stream_profile().get_intrinsics()
+        print(intr2)
+
+        extr = depth.as_video_stream_profile().get_extrinsics_to(color.as_video_stream_profile())
+        print(extr)
 
         self.pipeline.stop()
 
