@@ -3,9 +3,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cv2
 import math
+import sys
 
 deg_inc = 10
 
+# convert euler angles to rotation matrix
 def eulerToRot(x,y,z):
     R_x = np.array( [ [1, 0, 0],
                       [0, math.cos(x), -math.sin(x)],
@@ -19,37 +21,12 @@ def eulerToRot(x,y,z):
     R = np.dot(R_z, np.dot(R_y, R_x))
     return R
 
-def consolidate_data(rot_truth, rot_calc):
-    vec_dist_err = {}
-    mag_err = {}
-    for key in rot_truth:
-        item1 = rot_truth[key]
-        item2 = rot_calc[key]
-        vec_dist_item = []
-        theta_item = []
-        for i in range(len(item1)):
-            rot_mat1 = eulerToRot(item1[i][0], item1[i][1], item1[i][2])
-            rot_mat2 = eulerToRot(item2[i][0], item2[i][1], item2[i][2])
-            rot_mat1_T = np.transpose(rot_mat1)
-            rot = np.matmul(rot_mat1_T, rot_mat2)
-            theta = math.acos( (np.trace(rot) - 1.0) / 2.0)
-            rot_vec1,_ = cv2.Rodrigues(rot_mat1)
-            rot_vec2,_ = cv2.Rodrigues(rot_mat2)
-            if np.linalg.norm(np.subtract(rot_vec1, rot_vec2)) > np.linalg.norm(np.subtract(rot_vec1, -rot_vec2)):
-                vec_dist_item.append(np.reshape(np.subtract(rot_vec1, -rot_vec2), 3))
-            else:
-                vec_dist_item.append(np.reshape(np.subtract(rot_vec1, rot_vec2), 3))
-            theta_item.append(theta*180/3.1415)
-        vec_dist_err[key] = vec_dist_item
-        mag_err[key] = theta_item
-
-    return vec_dist_err, mag_err
-
+# mainly converts error stored in dictionaries into ordered lists
 def preprocess_for_plot(err):
     all_err = []
     mean_err = []
     stddev_err = []
-    keys = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160]
+    keys = [30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150]
 #     keys = [60, 70, 80, 90, 100, 110, 120]
     for key in keys:
         all_err.append(err[key])
@@ -58,6 +35,7 @@ def preprocess_for_plot(err):
 
     return all_err, mean_err, stddev_err
 
+# returns appropriate title for plot
 def getTitle(mode):
     title = ''
     if mode == 0:
@@ -67,9 +45,12 @@ def getTitle(mode):
 
     return title
 
-def boxplot_err(err, mode, axis=0):
+# creates box plot for error
+# mode - 0: quaternion data, 1: theta data
+# axis - only applies when mode = 0, data for x/y/z component
+def boxplot_err(err, foldername, mode, axis=0):
     bar_width = 0.35
-    n_groups = 7 # 15
+    n_groups = 13
     fig, ax = plt.subplots()
     index = np.arange(n_groups)
     ax.set_xlabel('Degrees')
@@ -87,31 +68,34 @@ def boxplot_err(err, mode, axis=0):
     title = getTitle(mode)
     ax.set_title(title)
     ax.set_xticks(index + bar_width/2)
-    # ax.set_xticklabels(('60', '70', '80', '90', '100', '110', '120'))
-    ax.set_xticklabels(('10', '20', '30', '40', '50', '60', '70', '80', '90',
-                        '100', '110', '120', '130', '140', '150', '160'))
     ax.legend()
     fig.tight_layout()
     plt.boxplot(err)
+    # ax.set_xticklabels(('60', '70', '80', '90', '100', '110', '120'))
+    ax.set_xticklabels(('30', '40', '50', '60', '70', '80', '90',
+                        '100', '110', '120', '130', '140', '150'))
 
     if mode == 0:
         if axis == 0:
-            filename = 'marker_acc_plots4/quat_dist_boxplot.jpg'
+            filename = foldername + '/quat_dist_boxplot.jpg'
         elif axis == 1:
-            filename = 'marker_acc_plots4/quat_x_boxplot.jpg'
+            filename = foldername + '/quat_x_boxplot.jpg'
         elif axis == 2:
-            filename = 'marker_acc_plots4/quat_y_boxplot.jpg'
+            filename = foldername + '/quat_y_boxplot.jpg'
         else:
-            filename = 'marker_acc_plots4/quat_z_boxplot.jpg'
+            filename = foldername + '/quat_z_boxplot.jpg'
     else:
-        filename = 'marker_acc_plots4/theta_boxplot.jpg'
+        filename = foldername + '/theta_boxplot.jpg'
     plt.savefig(filename)
 
-def mean_stddev(mean_err, std_dev_err, mode, axis=0):
+# plots mean and standard deviation
+# mode - 0: quaternion data, 1: theta data
+# axis - only applies when mode = 0, data for x/y/z component
+def mean_stddev(mean_err, std_dev_err, foldername,  mode, axis=0):
     # x = np.array([60, 70, 80, 90, 100, 110, 120])
-    x = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160])
+    x = np.array([30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150])
     fig, ax = plt.subplots()
-    ax.set_xlim(0, 170)
+    ax.set_xlim(20, 160)
     ax.set_xlabel('Degrees')
     if mode == 0:
         if axis == 0:
@@ -131,49 +115,57 @@ def mean_stddev(mean_err, std_dev_err, mode, axis=0):
     
     if mode == 0:
         if axis == 0:
-            filename = 'marker_acc_plots4/quat_dist_mean_stddev.jpg'
+            filename = foldername + '/quat_dist_mean_stddev.jpg'
         elif axis == 1:
-            filename = 'marker_acc_plots4/quat_x_mean_stddev.jpg'
+            filename = foldername + '/quat_x_mean_stddev.jpg'
         elif axis == 2:
-            filename = 'marker_acc_plots4/quat_y_mean_stddev.jpg'
+            filename = foldername + '/quat_y_mean_stddev.jpg'
         else:
-            filename = 'marker_acc_plots4/quat_z_mean_stddev.jpg'
+            filename = foldername + '/quat_z_mean_stddev.jpg'
     else:
-        filename = 'marker_acc_plots4/theta_mean_stddev.jpg'
+        filename = foldername + '/theta_mean_stddev.jpg'
     plt.savefig(filename)
 
 
-with open('acc_eval2.pickle', 'rb') as f:
+picklename = sys.argv[1]
+foldername = sys.argv[2]
+
+with open(picklename + '.pickle', 'rb') as f:
     _, _, vec_dist_err, mag_err = pickle.load(f)
 
 vec_err = {}
+
+# creates plots for RMS distance in err quaternion
 for key in vec_dist_err:
     vec_dist_err[key] = np.reshape(vec_dist_err[key], (30,3))
     vec_err[key] = np.linalg.norm(vec_dist_err[key], axis=1)
 vd_all, vd_mean, vd_stddev = preprocess_for_plot(vec_err)
-boxplot_err(vd_all, 0)
-mean_stddev(vd_mean, vd_stddev, 0)
+boxplot_err(vd_all, foldername, 0)
+mean_stddev(vd_mean, vd_stddev, foldername, 0)
 
+# creates plots for x component of err quaternion
 for key in vec_dist_err:
     item = vec_dist_err[key]
-    # print(item)
     vec_err[key] = item[:,0]
 vd_all, vd_mean, vd_stddev = preprocess_for_plot(vec_err)
-boxplot_err(vd_all, 0, 1)
-mean_stddev(vd_mean, vd_stddev, 0, 1)
+boxplot_err(vd_all, foldername, 0, 1)
+mean_stddev(vd_mean, vd_stddev, foldername, 0, 1)
 
+# creates plots for y component of err quaternion
 for key in vec_dist_err:
     vec_err[key] = vec_dist_err[key][:,1]
 vd_all, vd_mean, vd_stddev = preprocess_for_plot(vec_err)
-boxplot_err(vd_all, 0, 2)
-mean_stddev(vd_mean, vd_stddev, 0, 2)
+boxplot_err(vd_all, foldername, 0, 2)
+mean_stddev(vd_mean, vd_stddev, foldername, 0, 2)
 
+# creates plots for z component of err quaternion
 for key in vec_dist_err:
     vec_err[key] = vec_dist_err[key][:,2]
 vd_all, vd_mean, vd_stddev = preprocess_for_plot(vec_err)
-boxplot_err(vd_all, 0, 3)
-mean_stddev(vd_mean, vd_stddev, 0, 3)
+boxplot_err(vd_all, foldername, 0, 3)
+mean_stddev(vd_mean, vd_stddev, foldername, 0, 3)
 
+# creates plots for theta of err rotation matrix
 theta_all, theta_mean, theta_stddev = preprocess_for_plot(mag_err)
-boxplot_err(theta_all, 1)
-mean_stddev(theta_mean, theta_stddev, 1)
+boxplot_err(theta_all, foldername,  1)
+mean_stddev(theta_mean, theta_stddev, foldername, 1)

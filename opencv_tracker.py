@@ -15,9 +15,10 @@ depth_scale = depth_sensor.get_depth_scale()
 align_to = rs.stream.color
 align = rs.align(align_to)
 
-initBB = None
-fps = None
+initBB = None # bounding box
+fps = None # frame rate
 
+# built-in object trackers
 OPENCV_OBJECT_TRACKERS = {
   "csrt": cv2.TrackerCSRT_create,
   "kcf": cv2.TrackerKCF_create,
@@ -41,12 +42,9 @@ try:
   print("Press s to put bounding box around desired object.")
   while True:
     frames = cam.pipeline.wait_for_frames()
-
     aligned_frames = align.process(frames)
-
     aligned_depth_frame = aligned_frames.get_depth_frame()
     color_frame = aligned_frames.get_color_frame()
-
     if not aligned_depth_frame or not color_frame:
       continue
 
@@ -55,12 +53,12 @@ try:
     frame = color_image
     (H, W) = frame.shape[:2]
 
-    if initBB is not None:
+    if initBB is not None: # if user placed initial bounding box
       (success, box) = tracker.update(frame)
 
-      if success:
+      if success: # object is still tracked in image
         (x, y, w, h) = [int(v) for v in box]
-        cv2.rectangle(frame, (x,y), (x+w, y+h), (0, 255, 0), 2)
+        cv2.rectangle(frame, (x,y), (x+w, y+h), (0, 255, 0), 2) # put bounding box
 
       fps.update()
       fps.stop()
@@ -69,6 +67,7 @@ try:
         ("Success", "Yes" if success else "No"),
         ("FPS", "{:.2f}".format(fps.fps())), ]
 
+      # write above info list into image
       for (i, (k, v)) in enumerate(info):
         text = "{}: {}".format(k, v)
         cv2.putText(frame, text, (10, H - ((i*20) + 20)), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
@@ -76,13 +75,13 @@ try:
     cv2.imshow("Frame", frame)
     key = cv2.waitKey(1)
 
-    if key & 0xFF == ord('s'):
+    if key & 0xFF == ord('s'): # press s to put initial bounding box
       initBB = cv2.selectROI("Frame", frame, fromCenter=False, showCrosshair=True)
 
       tracker.init(frame, initBB)
       fps = FPS().start()
 
-    elif key & 0xFF == ord('q') or key == 27:
+    elif key & 0xFF == ord('q') or key == 27: # press q to quit
       cv2.destroyAllWindows()
       break
 
