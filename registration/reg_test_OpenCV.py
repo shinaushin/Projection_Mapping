@@ -56,25 +56,18 @@ if __name__ == "__main__":
 #    voxel_size = 0.005
 #    source, target, source_down, target_down, source_fpfh, target_fpfh = prepare_dataset(voxel_size, source, test)
     
-    source_down = source
-    target_down = test
-    draw_registration_result(source_down, target_down, np.identity(4))
+    draw_registration_result(source, target, np.identity(4))
 
-    draw_geometries([source_down])
-    draw_geometries([target_down])
+    draw_geometries([source])
+    draw_geometries([target])
 
-    source_arr = np.asmatrix(source_down.points)
-    target_arr = np.asmatrix(target_down.points)
+    source_arr = np.asmatrix(source.points)
+    target_arr = np.asmatrix(target.points)
     if (len(target_arr) > len(source_arr)):
         target_arr = target_arr[:len(source_arr),:] 
-    
-    sum_source = np.sum(source_arr,0)
-    average_source = sum_source / len(source_arr)
-    sum_target = np.sum(target_arr,0)
-    average_target = sum_target / len(target_arr)
     
     retval, out, inliers = cv2.estimateAffine3D(source_arr, target_arr, confidence=0.96)
     out = np.vstack([out, [0.0, 0.0, 0.0, 1.0]])
     print(out)
-    draw_registration_result(source_down, target_down, out)
+    draw_registration_result(source, target, out)
 
