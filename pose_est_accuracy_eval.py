@@ -5,34 +5,7 @@ import cv2.aruco as aruco
 import pyrealsense2 as rs
 import math
 from Realsense import RealSense as Realsense
-
-# rotating about x first
-def rotToEuler(rot):
-    sy = math.sqrt(rot[0,0] * rot[0,0] + rot[1,0] * rot[1,0])
-    singular = sy < 1e-6
-    if not singular:
-        x = math.atan2(rot[2,1], rot[2,2])
-        y = math.atan2(-rot[2,0], sy)
-        z = math.atan2(rot[1,0], rot[0,0])
-    else:
-        x = math.atan2(-rot[1,2], rot[1,1])
-        y = math.atan2(-rot[2,0], sy)
-        z = 0
-
-    return np.array([x,y,z])
-
-# rotating about x first 
-def eulerToRot(z,y,x):
-    R_x = np.array( [ [1, 0, 0],
-                      [0, math.cos(x), -math.sin(x)],
-                      [0, math.sin(x), math.cos(x)] ])
-    R_y = np.array( [ [math.cos(y), 0, math.sin(y) ],
-                      [0, 1, 0],
-                      [-math.sin(y), 0, math.cos(y) ] ])
-    R_z = np.array( [ [math.cos(z), -math.sin(z), 0],
-                      [math.sin(z), math.cos(z), 0],
-                      [0, 0, 1] ] )
-    return np.dot(R_z, np.dot(R_y, R_x))
+from rot_mat_euler_angles_conversion import rotToEuler, eulerToRot
 
 def eval_acc():
     cam = Realsense()
@@ -41,9 +14,7 @@ def eval_acc():
     objp = np.zeros((3*4,3), np.float32)
     objp[:,:2] = np.mgrid[0:4,0:3].T.reshape(-1,2)
     axis = np.float32([[1,0,0], [0,1,0], [0,0,-1]]).reshape(-1,3)
-    # objp = np.flip(objp, 0)
     objp = objp * 2.6 / 100.0
-#     print(objp)
             
     datapts = 30
     finalDeg = 150
@@ -87,7 +58,7 @@ def eval_acc():
                 depth = frames.get_depth_frame()
                 if ret == True:
                     corners2 = cv2.cornerSubPix(gray, corners, (11,11), (-1,-1), cam.criteria) # subpixel refinement
-                    corners2 = corners2[::-1]
+                    corners2 = corners2[::-1] # flip order of corners detected to match coordinate frame ot checkerboard with coordinate frame of camera
                     img = cv2.drawChessboardCorners(frame, (4,3), corners2, ret)
                     _, rvec, tvec, _ = cv2.solvePnPRansac(objp, corners2, cam.newcameramtx, cam.dist) # find pose of chessboard
                     
@@ -109,10 +80,9 @@ def eval_acc():
                     parameters = aruco.DetectorParameters_create()
 
                     # lists of ids and the corners belonging to each id
-                    # corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, aruco_dict, parameters=parameters)
                     corners, ids, rvecs, tvecs = cam.detect_markers_realsense(frame)
 
-                    font = cv2.FONT_HERSHEY_SIMPLEX #font for displaying text (below)
+                    font = cv2.FONT_HERSHEY_SIMPLEX
                     if np.all(ids != None):
                         listCorners = corners[0][0]
                         center = np.mean(listCorners, axis=0)
@@ -134,6 +104,7 @@ def eval_acc():
                         corns = np.array(corns)
                         
                         # user-measured corners of two markers on calibration board
+                        # two markers = 8 points, more stability in pose estimation
                         objpoints = [ [-0.025, 0.025, 0], [0.025, 0.025, 0], [0.025, -0.025, 0], [-0.025, -0.025, 0], 
                                       [0.1194625, -0.1607375, 0], [0.1694625, -0.1607375, 0], [0.1694625, -0.2107375, 0], [0.1194625, -0.2107375, 0] ]
                         objpoints = np.array(objpoints)
@@ -173,12 +144,16 @@ def eval_acc():
 
                         thresh = 0.115 # user-defined threshold to account for noise when looking at marker straight on
                         if rvec[0][0] * markerRot[0][0] < 0 or rvec[1][0] * markerRot[1][0] < 0 or rvec[2][0] * markerRot[2][0] < 0: # if any component differs in sign
+                             print(rvec[:,0] - markerRot[:,0])
                              # if value differs by more than threshold, it is not noise and is bad PNP solution
                              if abs(rvec[0][0] - markerRot[0][0]) > thresh or abs(rvec[1][0] - markerRot[1][0]) > thresh or abs(rvec[2][0] - markerRot[2][0]) > thresh:
                               continue # do not append because bad PNP solution
                         
                         rotmat, _ = cv2.Rodrigues(rvec)
                         markerRotMat, _ = cv2.Rodrigues(markerRot)
+                        print(rotToEuler(rotmat))
+                        print(rotToEuler(markerRotMat))
+                        print(rotToEuler(rotmat) - rotToEuler(markerRotMat))
                         nearIdentity = np.matmul(rotmat.transpose(), markerRotMat)
                         print(nearIdentity)
                         nearIdentity_vec, _ = cv2.Rodrigues(nearIdentity)
