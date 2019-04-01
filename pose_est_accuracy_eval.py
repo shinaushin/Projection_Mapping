@@ -7,7 +7,7 @@ import math
 from Realsense import RealSense as Realsense
 from rot_mat_euler_angles_conversion import rotToEuler, eulerToRot
 
-def eval_acc():
+def main():
     cam = Realsense()
 
     # object points from chessboard coordinate frame
@@ -144,7 +144,7 @@ def eval_acc():
 
                         thresh = 0.115 # user-defined threshold to account for noise when looking at marker straight on
                         if rvec[0][0] * markerRot[0][0] < 0 or rvec[1][0] * markerRot[1][0] < 0 or rvec[2][0] * markerRot[2][0] < 0: # if any component differs in sign
-                             print(rvec[:,0] - markerRot[:,0])
+                             # print(rvec[:,0] - markerRot[:,0])
                              # if value differs by more than threshold, it is not noise and is bad PNP solution
                              if abs(rvec[0][0] - markerRot[0][0]) > thresh or abs(rvec[1][0] - markerRot[1][0]) > thresh or abs(rvec[2][0] - markerRot[2][0]) > thresh:
                               continue # do not append because bad PNP solution
@@ -181,4 +181,5 @@ def eval_acc():
     finally:
         cam.pipeline.stop()
 
-eval_acc()
+if __name__ == "__main__":
+    main()

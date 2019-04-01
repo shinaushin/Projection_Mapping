@@ -87,26 +87,31 @@ def reorganize(data):
         ordered[key] = dataArr
     return ordered
 
-picklename = sys.argv[1]
-foldername = sys.argv[2]
 
-with open(picklename + '.pickle', 'rb') as f:
-    pos_truth, pos_calc, rot_truth, rot_calc = pickle.load(f)
+def main():
+    picklename = sys.argv[1]
+    foldername = sys.argv[2]
 
-# print(pos_truth)
-# print(pos_calc)
-pos_truth = reorganize(pos_truth)
-pos_calc = reorganize(pos_calc)
+    with open(picklename + '.pickle', 'rb') as f:
+        pos_truth, pos_calc, rot_truth, rot_calc = pickle.load(f)
 
-boxplot_err(pos_truth, pos_calc, foldername)
-boxplot_err(pos_truth, pos_calc, foldername, 1)
-boxplot_err(pos_truth, pos_calc, foldername, 2)
-boxplot_err(pos_truth, pos_calc, foldername, 3)
+    # print(pos_truth)
+    # print(pos_calc)
+    pos_truth = reorganize(pos_truth)
+    pos_calc = reorganize(pos_calc)
 
-mean_stddev(pos_truth, pos_calc, foldername)
-mean_stddev(pos_truth, pos_calc, foldername, 1)
-mean_stddev(pos_truth, pos_calc, foldername, 2)
-mean_stddev(pos_truth, pos_calc, foldername, 3)
+    boxplot_err(pos_truth, pos_calc, foldername)
+    boxplot_err(pos_truth, pos_calc, foldername, 1)
+    boxplot_err(pos_truth, pos_calc, foldername, 2)
+    boxplot_err(pos_truth, pos_calc, foldername, 3)
 
-# plt.show()
+    mean_stddev(pos_truth, pos_calc, foldername)
+    mean_stddev(pos_truth, pos_calc, foldername, 1)
+    mean_stddev(pos_truth, pos_calc, foldername, 2)
+    mean_stddev(pos_truth, pos_calc, foldername, 3)
+
+    # plt.show()
+
+if __name__ == "__main__":
+    main()
 

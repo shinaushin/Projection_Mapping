@@ -127,45 +127,49 @@ def mean_stddev(mean_err, std_dev_err, foldername,  mode, axis=0):
     plt.savefig(filename)
 
 
-picklename = sys.argv[1]
-foldername = sys.argv[2]
+def main():
+    picklename = sys.argv[1]
+    foldername = sys.argv[2]
 
-with open(picklename + '.pickle', 'rb') as f:
-    _, _, vec_dist_err, mag_err = pickle.load(f)
+    with open(picklename + '.pickle', 'rb') as f:
+        _, _, vec_dist_err, mag_err = pickle.load(f)
 
-vec_err = {}
+    vec_err = {}
 
-# creates plots for RMS distance in err quaternion
-for key in vec_dist_err:
-    vec_dist_err[key] = np.reshape(vec_dist_err[key], (30,3))
-    vec_err[key] = np.linalg.norm(vec_dist_err[key], axis=1)
-vd_all, vd_mean, vd_stddev = preprocess_for_plot(vec_err)
-boxplot_err(vd_all, foldername, 0)
-mean_stddev(vd_mean, vd_stddev, foldername, 0)
+    # creates plots for RMS distance in err quaternion
+    for key in vec_dist_err:
+        vec_dist_err[key] = np.reshape(vec_dist_err[key], (30,3))
+        vec_err[key] = np.linalg.norm(vec_dist_err[key], axis=1)
+    vd_all, vd_mean, vd_stddev = preprocess_for_plot(vec_err)
+    boxplot_err(vd_all, foldername, 0)
+    mean_stddev(vd_mean, vd_stddev, foldername, 0)
 
-# creates plots for x component of err quaternion
-for key in vec_dist_err:
-    item = vec_dist_err[key]
-    vec_err[key] = item[:,0]
-vd_all, vd_mean, vd_stddev = preprocess_for_plot(vec_err)
-boxplot_err(vd_all, foldername, 0, 1)
-mean_stddev(vd_mean, vd_stddev, foldername, 0, 1)
+    # creates plots for x component of err quaternion
+    for key in vec_dist_err:
+        item = vec_dist_err[key]
+        vec_err[key] = item[:,0]
+    vd_all, vd_mean, vd_stddev = preprocess_for_plot(vec_err)
+    boxplot_err(vd_all, foldername, 0, 1)
+    mean_stddev(vd_mean, vd_stddev, foldername, 0, 1)
 
-# creates plots for y component of err quaternion
-for key in vec_dist_err:
-    vec_err[key] = vec_dist_err[key][:,1]
-vd_all, vd_mean, vd_stddev = preprocess_for_plot(vec_err)
-boxplot_err(vd_all, foldername, 0, 2)
-mean_stddev(vd_mean, vd_stddev, foldername, 0, 2)
+    # creates plots for y component of err quaternion
+    for key in vec_dist_err:
+        vec_err[key] = vec_dist_err[key][:,1]
+    vd_all, vd_mean, vd_stddev = preprocess_for_plot(vec_err)
+    boxplot_err(vd_all, foldername, 0, 2)
+    mean_stddev(vd_mean, vd_stddev, foldername, 0, 2)
 
-# creates plots for z component of err quaternion
-for key in vec_dist_err:
-    vec_err[key] = vec_dist_err[key][:,2]
-vd_all, vd_mean, vd_stddev = preprocess_for_plot(vec_err)
-boxplot_err(vd_all, foldername, 0, 3)
-mean_stddev(vd_mean, vd_stddev, foldername, 0, 3)
+    # creates plots for z component of err quaternion
+    for key in vec_dist_err:
+        vec_err[key] = vec_dist_err[key][:,2]
+    vd_all, vd_mean, vd_stddev = preprocess_for_plot(vec_err)
+    boxplot_err(vd_all, foldername, 0, 3)
+    mean_stddev(vd_mean, vd_stddev, foldername, 0, 3)
 
-# creates plots for theta of err rotation matrix
-theta_all, theta_mean, theta_stddev = preprocess_for_plot(mag_err)
-boxplot_err(theta_all, foldername,  1)
-mean_stddev(theta_mean, theta_stddev, foldername, 1)
+    # creates plots for theta of err rotation matrix
+    theta_all, theta_mean, theta_stddev = preprocess_for_plot(mag_err)
+    boxplot_err(theta_all, foldername,  1)
+    mean_stddev(theta_mean, theta_stddev, foldername, 1)
+
+if __name__ == "__main__":
+    main()

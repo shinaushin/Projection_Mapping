@@ -8,8 +8,8 @@ from Realsense import RealSense
 from rot_mat_euler_angles_conversion import rotToEuler
 import pickle
 
-def calibrate(marker_IDs, num_markers, comm_marker_id, tf_dict, num_pts):
-    tolerance = 10
+def calibrate(cam, align, marker_IDs, num_markers, comm_marker_id, tf_dict, num_pts):
+    tolerance = 5
 
     aruco_dict = aruco.Dictionary_get(aruco.DICT_6X6_250)
     parameters = aruco.DetectorParameters_create()
@@ -30,26 +30,28 @@ def calibrate(marker_IDs, num_markers, comm_marker_id, tf_dict, num_pts):
         if userinput & 0xFF == ord('p'): # user wants to record point
             font = cv2.FONT_HERSHEY_SIMPLEX
             corners, ids, rvecs, tvecs = cam.detect_markers_realsense(frame)
+            if comm_marker_id in ids:
+                index = np.argwhere(ids==comm_marker_id)
+                ids = np.delete(ids, index)
 
             shouldRecord = True
             if ids is not None and len(ids) > 1:
                 ids.shape = (ids.size)
                 ids = ids.tolist()
                 ideal_angle = 360 / (num_markers-1)
-                for i in range(len(ids)):
-                    marker1 = tf_dict[ids[i]]
+                for i in range(len(ids)-1):
+                    print(ids)
+                    marker1 = rvecs[i] # tf_dict[ids[i]]
                     marker1_rot, _ = cv2.Rodrigues(marker1[0])
-                    if i == len(ids)-1:
-                        j = 0
-                    else:
-                        j = i + 1
-                    marker2 = tf_dict[ids[j]]
+                    j = i + 1
+                    marker2 = rvecs[j] # tf_dict[ids[j]]
                     marker2_rot, _ = cv2.Rodrigues(marker2[0])
                     marker1_rot_T = marker1_rot.transpose()
                     rot_btw_1_2 = np.matmul(marker1_rot_T, marker2_rot)
                     angles = rotToEuler(rot_btw_1_2)
                     y_angle = np.absolute(angles[1])*180/3.1415
-                    if y_angle < ideal_angle - tolerance or y_angle > ideal_angle + tolerance:
+                    print(y_angle)
+                    if (np.absolute(ids[i] - ids[j]) > 1 and np.absolute(ids[i] - ids[j]) < num_markers-2) or y_angle < ideal_angle - tolerance or y_angle > ideal_angle + tolerance:
                         shouldRecord = False
                         print("Bad orientation found")
                         break
@@ -102,33 +104,36 @@ def calibrate(marker_IDs, num_markers, comm_marker_id, tf_dict, num_pts):
     # Solve least-squares Ax = b
     A = np.asanyarray(A)
     b = np.asanyarray(b)
-    x = np.linalg.lstsq(A,b, rcond=None) # x[0:2] = p_t, x[3:5] = p_pivot
-    print(x)
+    x = np.linalg.lstsq(A,b, rcond=None)[0] # x[0:2] = p_t, x[3:5] = p_pivot
+    print(x[0:3])
 
-    return x[0:2]
+    return x[0:3]
 
+def main():
+    cam = RealSense()
+    profile = cam.pipeline.start(cam.config)
+    depth_sensor = profile.get_device().first_depth_sensor()
+    depth_scale = depth_sensor.get_depth_scale()
+    align_to = rs.stream.color
+    align = rs.align(align_to)
 
-cam = RealSense()
-profile = cam.pipeline.start(cam.config)
-depth_sensor = profile.get_device().first_depth_sensor()
-depth_scale = depth_sensor.get_depth_scale()
-align_to = rs.stream.color
-align = rs.align(align_to)
+    marker_IDs = raw_input("What are the IDs of the markers of the tool, starting in order with the ones on the side and finally the one on the top all separated by a single space? ")
+    marker_IDs = [int(x) for x in marker_IDs.split()]
+    num_markers = len(marker_IDs)
+    comm_marker_id = marker_IDs[-1]
 
-marker_IDs = raw_input("What are the IDs of the markers of the tool, starting in order with the ones on the side and finally the one on the top all separated by a single space? ")
-marker_IDs = [int(x) for x in marker_IDs.split()]
-num_markers = len(marker_IDs)
-comm_marker_id = marker_IDs[-1]
+    with open('markertool'+str(num_markers)+'.pickle', 'rb') as f:
+        tf_dict = pickle.load(f)
 
-with open('markertool'+str(num_markers)+'.pickle', 'rb') as f:
-    tf_dict = pickle.load(f)
+    # User input of how long to do calibration for
+    num_pts = raw_input("How many pivot calibration points do you want to use? ")
+    num_pts = int(num_pts)
 
-# User input of how long to do calibration for
-num_pts = raw_input("How many pivot calibration points do you want to use? ")
-num_pts = int(num_pts)
+    x = calibrate(cam, align, marker_IDs, num_markers, comm_marker_id, tf_dict, num_pts)
 
-x = calibrate(marker_IDs, num_markers, comm_marker_id, tf_dict, num_pts)
+    with open('pivot_cal_markertool'+str(num_markers)+'.pickle', 'wb') as f:
+        pickle.dump(x, f);
 
-with open('pivot_cal_markertool'+str(num_markers)+'.pickle', 'wb') as f:
-    pickle.dump(x, f);
+if __name__ == "__main__":
+    main()
 

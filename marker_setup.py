@@ -8,7 +8,7 @@ import math
 from rot_mat_euler_angles_conversion import rotToEuler
 
 
-def setup(marker_IDs, num_markers, comm_marker_id):
+def setup(cam, align, marker_IDs, num_markers, comm_marker_id):
     tolerance = 10
 
     tf_dict = {}
@@ -57,6 +57,7 @@ def setup(marker_IDs, num_markers, comm_marker_id):
                     tf_dict[ids[i]].append( t_tf )
 
         if len(tf_dict) == num_markers-1:
+            print(tf_dict.keys())
             ideal_angle = 360 / (num_markers-1)
             list_angles = []
             for i in range(num_markers-1):
@@ -77,8 +78,16 @@ def setup(marker_IDs, num_markers, comm_marker_id):
             print(list_angles)
             for i in range(len(list_angles)):
                 if list_angles[i] < ideal_angle - tolerance or list_angles[i] > ideal_angle + tolerance:
-                    tf_dict.pop(marker_IDs[i])
-                    tf_dict.pop(marker_IDs[i+1])
+                    if marker_IDs[i] in tf_dict:
+                        tf_dict.pop(marker_IDs[i])
+                    
+                    if i == comm_marker_id - 1:
+                        j = 0
+                    else:
+                        j = i + 1
+ 
+                    if marker_IDs[j] in tf_dict:
+                        tf_dict.pop(marker_IDs[j])
 
         cv2.imshow('frame', frame)
         cv2.waitKey(10)
@@ -88,22 +97,25 @@ def setup(marker_IDs, num_markers, comm_marker_id):
 
     return tf_dict, list_angles
 
+def main():
+    cam = RealSense()
+    profile = cam.pipeline.start(cam.config)
+    depth_sensor = profile.get_device().first_depth_sensor()
+    depth_scale = depth_sensor.get_depth_scale()
+    align_to = rs.stream.color
+    align = rs.align(align_to)
 
-cam = RealSense()
-profile = cam.pipeline.start(cam.config)
-depth_sensor = profile.get_device().first_depth_sensor()
-depth_scale = depth_sensor.get_depth_scale()
-align_to = rs.stream.color
-align = rs.align(align_to)
+    marker_IDs = raw_input("What are the IDs of the markers of the tool, starting in order with the ones on the side and finally the one on the top all separated by a single space? ")
+    marker_IDs = [int(x) for x in marker_IDs.split()]
+    num_markers = len(marker_IDs)
+    comm_marker_id = marker_IDs[-1]
 
-marker_IDs = raw_input("What are the IDs of the markers of the tool, starting in order with the ones on the side and finally the one on the top all separated by a single space? ")
-marker_IDs = [int(x) for x in marker_IDs.split()]
-num_markers = len(marker_IDs)
-comm_marker_id = marker_IDs[-1]
-
-dictionary, _ = setup(marker_IDs, num_markers, comm_marker_id)
+    dictionary, _ = setup(cam, align,  marker_IDs, num_markers, comm_marker_id)
     
-# store dictionary in pickle
-with open('test_markertool'+str(num_markers)+'.pickle', 'wb') as f:
-    pickle.dump(dictionary, f)
+    # store dictionary in pickle
+    with open('markertool'+str(num_markers)+'.pickle', 'wb') as f:
+        pickle.dump(dictionary, f)
+
+if __name__ == "__main__":
+    main()
 
