@@ -121,6 +121,8 @@ Another possible solution could be to use the marker panels with single markers 
 
 Another enhancement / solution is through using IPPE (Infinitesimal Plane-based Pose Estimation). This python package will output the two ambiguous pose estimations for the marker. And with the transformation matrix for each pose, we can compare the 3D position error of the four corners with the depth map position of the corners. Whichever one has smaller corner position error contains the correct transformation matrix.
 
+4/1 Brainstorm: print smaller version of 6-sided marker tool to mount on patient skull. Even when patient head is moving, we wil have fixed reference frame between marker and patient skull. Another idea is to print workstation (eg poster) with multiple markers on it. It is good in that you will know relative transformation between markers but it is bad because you will have to re-register everytime the object is moved.
+
 #### reg_test_Open3D.py
 
 Test file for Open3D package rigid registration method
