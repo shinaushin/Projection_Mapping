@@ -9,7 +9,7 @@ from rot_mat_euler_angles_conversion import rotToEuler
 
 
 def setup(cam, align, marker_IDs, num_markers, comm_marker_id):
-    tolerance = 10
+    tolerance = 4
 
     tf_dict = {}
     while (len(tf_dict) < num_markers-1):
@@ -57,7 +57,7 @@ def setup(cam, align, marker_IDs, num_markers, comm_marker_id):
                     tf_dict[ids[i]].append( t_tf )
 
         if len(tf_dict) == num_markers-1:
-            print(tf_dict.keys())
+            # print(tf_dict.keys())
             ideal_angle = 360 / (num_markers-1)
             list_angles = []
             for i in range(num_markers-1):
@@ -72,7 +72,7 @@ def setup(cam, align, marker_IDs, num_markers, comm_marker_id):
                 marker1_rot_T = marker1_rot.transpose()
                 rot_btw_1_2 = np.matmul(marker1_rot_T, marker2_rot)
                 angles = rotToEuler(rot_btw_1_2)
-                y_angle = np.absolute(angles[1])*180/3.1415
+                y_angle = angles[1] * 180 / 3.1415 # np.absolute(angles[1])*180/3.1415
                 list_angles.append(y_angle)
         
             print(list_angles)
@@ -113,7 +113,7 @@ def main():
     dictionary, _ = setup(cam, align,  marker_IDs, num_markers, comm_marker_id)
     
     # store dictionary in pickle
-    with open('markertool'+str(num_markers)+'.pickle', 'wb') as f:
+    with open('test_markertool'+str(num_markers)+'.pickle', 'wb') as f:
         pickle.dump(dictionary, f)
 
 if __name__ == "__main__":

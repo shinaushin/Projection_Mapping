@@ -8,8 +8,10 @@ from Realsense import RealSense
 from rot_mat_euler_angles_conversion import rotToEuler
 import pickle
 
+# saved as [0.00812451 -0.00558087 -0.21730515] N = 10
+
 def calibrate(cam, align, marker_IDs, num_markers, comm_marker_id, tf_dict, num_pts):
-    tolerance = 5
+    tolerance = 4
 
     aruco_dict = aruco.Dictionary_get(aruco.DICT_6X6_250)
     parameters = aruco.DetectorParameters_create()
@@ -131,7 +133,7 @@ def main():
 
     x = calibrate(cam, align, marker_IDs, num_markers, comm_marker_id, tf_dict, num_pts)
 
-    with open('pivot_cal_markertool'+str(num_markers)+'.pickle', 'wb') as f:
+    with open('test_pivot_cal_markertool'+str(num_markers)+'.pickle', 'wb') as f:
         pickle.dump(x, f);
 
 if __name__ == "__main__":
