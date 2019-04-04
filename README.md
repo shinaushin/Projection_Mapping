@@ -5,6 +5,7 @@ Development of a projection mapping prototype that will project important patien
 ## Documentation
 
 Unless otherwise stated, all use cases for python files are simply: python <file_name.py> 
+Also, always run files while in the directory that the file is in because Python imports depend on the directory in which you run the file.
 
 ### acc_eval*.pickle / multi_marker.pickle
 
