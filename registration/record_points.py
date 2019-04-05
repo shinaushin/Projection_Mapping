@@ -104,62 +104,118 @@ def main():
                         print("Not enough markers detected on stationary marker on target object")
                         continue
 
-                    for i in range(len(ids_ord)-1):
-                        if ids_ord[i+1] - ids_ord[i] > 1:
-                            idx = i
+                    best_index = find_best_marker(ids_ord, rvecs_ord, tvecs_ord, num_markers)
+                    best_stat_index = find_best_markers(stat_ids_ord, stat_rvecs_ord, stat_tvecs_ord, num_stat_markers)
+                    if best_index != -1 and best_stat_index != -1:
+                        # transform end tip from marker tool frame to camera frame
+                        marker = ids_ord[best_index]
+                        r_tf, t_tf = tf_dict[marker]
+                        t_tf.shape = (3,1)
+                        rot, _ = cv2.Rodrigues(r_tf)
+                        rot_T = rot.transpose()
+                        inv_t = np.matmul(-rot_T, t_tf)
+                        pt_marker_i = np.matmul(rot_T, tip) + inv_t
+                        # pt_marker_i.shape = (3,1)
 
-                    iters = len(ids_ord)-idx+1
-                    last = len(ids_ord)-1
-                    for i in range(iters):
-                        ids_ord.insert(0, ids_ord.pop(last))
-                        rvecs_ord.insert(0, rvecs_ord.pop(last))
-                        tvecs_ord.insert(0, tvecs_ord.pop(last))
+                        # transform from marker i frame to camera frame
+                        rot, _ = cv2.Rodrigues(rvecs_ord[best_index][0][0])
+                        t = tvecs[best_index][0][0]
+                        t.shape = (3,1)
+                        pt_cam = np.matmul(rot, pt_marker_i) + t 
+                        pts.append(pt_cam)
 
-                    print(ids_ord)
-                    acceptable_id_idx = []
-                    for i in range(len(ids_ord)-1):
-                        marker1_id = ids_ord[i]
-                        marker2_id = ids_ord[i+1]
-                        if marker1_id == num_markers-2:
-                            marker2_id = marker2_id + num_markers-1
+                        # transform point from camera frame to stationary marker frame
+                        rot, _ cv2.Rodrigues(stat_rvecs_ord[best_stat_index][0][0])
+                        t = tvecs[best_stat_index][0][0]
+                        t.shape = (3,1)
+                        rot_T = rot.transpose()
+                        inv_T = np.matmul(-rot_T, t)
 
-                        if marker2_id - marker1_id == 1:
-                            marker1 = rvecs_ord[i]
-                            marker1_rot, _ = cv2.Rodrigues(marker1[0])
-                            marker2 = rvecs_ord[i+1]
-                            marker2_rot, _ = cv2.Rodrigues(marker2[0])
-                            marker1_rot_T = marker1_rot.transpose()
-                            rot_btw_1_2 = np.matmul(marker1_rot_T, marker2_rot)
-                            angles = rotToEuler(rot_btw_1_2)
-                            angles = angles * 180 / 3.1415
-                            print(angles)
-                            y_angle = angles[1]
-                            if y_angle < ideal_angle + tolerance and y_angle > ideal_angle - tolerance:
-                                if i not in acceptable_id_idx:
-                                    acceptable_id_idx.append(i)
-                                if i+1 not in acceptable_id_idx:
-                                    acceptable_id_idx.append(i+1)
-                            else:
-                                if i in acceptable_id_idx:
-                                    idx = acceptable_id_idx.index(i)
-                                    acceptable_id_idx.pop(idx)
-                                if i+1 in acceptable_id_idx:
-                                    idx = acceptable_id_idx.index(i+1)
-                                    acceptable_id_idx.pop(idx)
+                        pt_stat_marker_i = np.matmul(rot_T, pt_cam) + inv_T
 
-                    print(acceptable_id_idx)
-                    length = len(acceptable_id_idx)
-                    if length > 0:
-                        index = 0
-                        if length > 1:
-                            total = 0
-                            for i in range(length):
-                                rot1, _ = cv2.Rodrigues(rvecs_ord[acceptable_id_idx[i]])
-                                angle_set = np.absolute(rotToEuler(rot1))
-                                temp = np.sum(angle_set)
-                                if temp > total:
-                                    index = i
-                                    total = temp
+                        stat_marker = stat_ids_ord[best_stat_index]
+                        r_tf, t_tf = stat_tf_dict[stat_marker]
+                        t_tf.shape = (3,1)
+                        rot, _ = cv2.Rodrigues(r_tf)
+                        pt_stat_comm_marker = np.matmul(rot, pt_stat_marker_i) + t_tf
+
+                        pts.append(pt_stat_comm_marker)
+
+                        recorded = recorded + 1 
+                    else:
+                        print("Bad orientations calculated")
+                else:
+                    print("Not enough markers detected")
+
+    finally:
+        cam.pipeline.stop()
+
+    print(pts)
+    return pts
+
+
+def find_best_marker(ids_ord, rvecs_ord, tvecs_ord, num_markers):
+    tolerance = 4
+    for i in range(len(ids_ord)-1):
+        if ids_ord[i+1] - ids_ord[i] > 1:
+             idx = i
+
+    iters = len(ids_ord)-idx+1
+    last = len(ids_ord)-1
+    for i in range(iters):
+        ids_ord.insert(0, ids_ord.pop(last))
+        rvecs_ord.insert(0, rvecs_ord.pop(last))
+        tvecs_ord.insert(0, tvecs_ord.pop(last))
+
+    print(ids_ord)
+    acceptable_id_idx = []
+    for i in range(len(ids_ord)-1):
+        marker1_id = ids_ord[i]
+        marker2_id = ids_ord[i+1]
+        if marker1_id == num_markers-2:
+            marker2_id = marker2_id + num_markers-1
+
+        if marker2_id - marker1_id == 1:
+            marker1 = rvecs_ord[i]
+            marker1_rot, _ = cv2.Rodrigues(marker1[0])
+            marker2 = rvecs_ord[i+1]
+            marker2_rot, _ = cv2.Rodrigues(marker2[0])
+            marker1_rot_T = marker1_rot.transpose()
+            rot_btw_1_2 = np.matmul(marker1_rot_T, marker2_rot)
+            angles = rotToEuler(rot_btw_1_2)
+            angles = angles * 180 / 3.1415
+            print(angles)
+            y_angle = angles[1]
+            if y_angle < ideal_angle + tolerance and y_angle > ideal_angle - tolerance:
+                if i not in acceptable_id_idx:
+                    acceptable_id_idx.append(i)
+                if i+1 not in acceptable_id_idx:
+                    acceptable_id_idx.append(i+1)
+            else:
+                if i in acceptable_id_idx:
+                    idx = acceptable_id_idx.index(i)
+                    acceptable_id_idx.pop(idx)
+                if i+1 in acceptable_id_idx:
+                    idx = acceptable_id_idx.index(i+1)
+                    acceptable_id_idx.pop(idx)
+
+    print(acceptable_id_idx)
+    length = len(acceptable_id_idx)
+    if length > 0:
+        index = 0
+        if length > 1:
+            total = 0
+            for i in range(length):
+                rot1, _ = cv2.Rodrigues(rvecs_ord[acceptable_id_idx[i]])
+                angle_set = np.absolute(rotToEuler(rot1))
+                temp = np.sum(angle_set)
+                if temp > total:
+                    index = i
+                    total = temp
+
+            return acceptable_id_idx[index]
+
+    return -1
 
                         # transform end tip from marker tool frame to camera frame
                         marker = ids_ord[acceptable_id_idx[index]]
@@ -193,5 +249,9 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    pts = main()
+
+    target_obj = 'skull1'
+    with open('../pts_stat_marker_frame_'+target_obj+'.pickle', 'wb') as f:
+        pickle.dump(pts, f)
 
