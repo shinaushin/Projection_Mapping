@@ -4,22 +4,26 @@ Development of a projection mapping prototype that will project important patien
 
 ## Documentation
 
-Unless otherwise stated, all use cases for python files are simply: python <file_name.py> 
+Unless otherwise stated, all use cases for python files are simply: python <file_name.py>
+
 Also, always run files while in the directory that the file is in because Python imports depend on the directory in which you run the file.
 
 ### acc_eval*.pickle / multi_marker.pickle
 
 pickle is a data format used by Python to easily serialize and deserialize information and is the main way I use to save data that I want to use for later at any point in time
+
 These pickle files contain data from the marker pose estimation accuracy evaluations conducted to visualize the position and orientation error
 
 ### Archive/
 
 Not significant
+
 Old files that are not used any more
 
 ### camera_calibration.py
 
 Python script used to calibrate camera and will print intrinsics of camera (camera matrix and distortion coefficients)
+
 Although there were default parameters that were stored in the Realsense camera, they were not at all accurate for unknown reasons. This script will work for any 4x3 checkerboard and will collect 20 different images before conducted the calibration using OpenCV. This script does not save the images.
 
 ### data/
@@ -39,19 +43,25 @@ reads in txt file with vertex data and multiplies everything by a scalar number
 ### data_viz*.py
 Use case: python data_viz*.py <name of pickle to deserialize> <name of folder to put plots in>
   
+
 Deserializes pickle containing all data collected from pose_est_accuracy_eval.py
+
 Plots box plots and mean/stddev plots for x,y,z,mag error in position and quaternion,theta error in orientation
 
 ### IR_calibration.py
 
 Same thing as camera_calibration.py except for IR camera.
+
 Uses same checkerboard and same number of images for OpenCV calibration
 
 ### marker_detection_realsense.py
 
 Detects markers in images from Realsense camera
+
 Draws marker coordinate frame on it
+
 Writes marker 3D coordinate in camera coordinate frame on image
+
 Draws checkerboard corners detected on image (4x3 checkerboard)
 
 ### marker_det_plots_bad_rot_metric/
@@ -69,27 +79,37 @@ plots of results of marker pose estimation using two markers with corrected erro
 ### marker_setup.py
 
 python script to calculate transformation from each marker on the side of the marker tool to the top marker.
+
 Saves all transformations into a pickle file.
+
 Verifies that transformations are reasonable by making the angle of rotation between any two consecutive markers is within a certain threshold that can be set by the user.
+
 For example, suppose the marker tool used had 7 markers. This means there is 1 marker on top and 6 markers on the side. The tool is therefore in a hexagonal shape. Therefore the angle of rotation for any two consecutive markers should be approximately 60 degrees.
 
 ### marker_setup_test.py
 
 python script to evaluation accuracy of marker_setup.py
+
 Creates box plot and mean/stddev plot of error in saved transformations
+
 User can define how many marker setup procedures to conduct before doing the error analysis
+
 Saves plot data in a pickle file
 
 ### markertool*.pickle
 
 For each marker tool, we specify the frame of the top marker as the overall marker tool coordinate frame.
+
 This pickle file contains the transformation of every other marker to that top marker
 
 ### pivot_cal.py
 
 Performs pivot calibration of user-specified marker tool
+
 Outputs position of tip of marker tool relative to origin of marker tool in marker tool coordinate frame
+
 Saves that position in pickle file
+
 Dimensions: hexagon - 211 mm, square - 210 mm
 
 ### pivot_cal_test.py
@@ -106,9 +126,13 @@ Results
 ### Realsense.py
 
 Defines Realsense class
+
 Performs some of the initialization needed to stream rgb and depth images
+
 Contains important info such as height/width of image, camera matrix, distortion coefficients, IR camera matrix, IR distortion coefficients, refined RGB + IR camera matrices, extrinsics of TF from IR to RGB camera frames
+
 Detects marker corners and calcualtes transformation from marker to camera frame using Realsense RGB images
+
 Can access Intel-saved intrinsics and extrinsics
 
 ### registration/
@@ -143,6 +167,7 @@ contains methods for converting rotation matrix to ZYX euler angles and vice ver
 ### test/
 
 Not significant.
+
 Folder that contains plots created when testing data viz files.
 
 
