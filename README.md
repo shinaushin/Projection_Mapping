@@ -90,6 +90,7 @@ This pickle file contains the transformation of every other marker to that top m
 Performs pivot calibration of user-specified marker tool
 Outputs position of tip of marker tool relative to origin of marker tool in marker tool coordinate frame
 Saves that position in pickle file
+Dimensions: hexagon - 211 mm, square - 210 mm
 
 ### pivot_cal_test.py
 
@@ -97,7 +98,10 @@ Same as marker_setup_test.py except it is testing the pivot_cal.py
 
 ### pose_est_accuracy_eval.py
 
+TODO
 
+Results
+- plots available, will post later
 
 ### Realsense.py
 
@@ -140,3 +144,12 @@ contains methods for converting rotation matrix to ZYX euler angles and vice ver
 
 Not significant.
 Folder that contains plots created when testing data viz files.
+
+
+## Future Steps
+
+* Migrate to ROS
+
+* use ar_track_alvar package for ArUco marker detection and pose estimation
+
+* use Intel dynamic calibration tool to recalibrate Realsense camera (https://downloadcenter.intel.com/download/28517/Intel-RealSense-D400-Series-Calibration-Tools-and-API?v=t)
