@@ -24,7 +24,7 @@ Old files that are not used any more
 
 Python script used to calibrate camera and will print intrinsics of camera (camera matrix and distortion coefficients)
 
-Although there were default parameters that were stored in the Realsense camera, they were not at all accurate for unknown reasons. This script will work for any 4x3 checkerboard and will collect 20 different images before conducted the calibration using OpenCV. This script does not save the images.
+Although there were default parameters that were stored in the Realsense camera, they were not at all accurate for unknown reasons. This script will work for any 4x3 checkerboard (size can be changed in code) and will collect 20 different images (number of images used can also be changed in code) before conducted the calibration using OpenCV. This script does not save the images.
 
 ### data/
 
@@ -46,13 +46,13 @@ Use case: python data_viz*.py <name of pickle to deserialize> <name of folder to
 
 Deserializes pickle containing all data collected from pose_est_accuracy_eval.py
 
-Plots box plots and mean/stddev plots for x,y,z,mag error in position and quaternion,theta error in orientation
+Plots box plots and mean/stddev plots for x,y,z,mag error in position and quaternion,theta error in orientation. Assumes that calibration is done in increments of 10 deg from 30 to 150 degrees (can be changed in code)
 
 ### IR_calibration.py
 
 Same thing as camera_calibration.py except for IR camera.
 
-Uses same checkerboard and same number of images for OpenCV calibration
+Uses same checkerboard and same number of images for OpenCV calibration (numbers can be changed in code)
 
 ### marker_detection_realsense.py
 
@@ -62,7 +62,7 @@ Draws marker coordinate frame on it
 
 Writes marker 3D coordinate in camera coordinate frame on image
 
-Draws checkerboard corners detected on image (4x3 checkerboard)
+Draws checkerboard corners detected on image (4x3 checkerboard -- can be changed in code)
 
 ### marker_det_plots_bad_rot_metric/
 
@@ -118,10 +118,7 @@ Same as marker_setup_test.py except it is testing the pivot_cal.py
 
 ### pose_est_accuracy_eval.py
 
-TODO
-
-Results
-- plots available, will post later
+Calibration procedure is done in increments of 10 deg from 30 to 150 deg. There are two markers (marker1 and marker2) set coplanar to a 4x3 checkerboard. The transformation among the markers and the checkerboard are all known. The "ground truth" transformation between the camera and marker1 is calculated through the checkerboard because we assume that the error in detecting the checkerboard is very small from the camera calibration. The mesaured/observed transformation from the camera frame to the marker1 frame is computed through solvepnp using 8 points (4 corners of marker1 and 4 additional corners from marker2 transformed to frame of marker1).
 
 ### Realsense.py
 
