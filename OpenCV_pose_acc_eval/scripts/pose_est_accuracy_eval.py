@@ -1,3 +1,6 @@
+import sys
+sys.path.append('../../')
+
 import pickle
 import numpy as np
 import cv2
@@ -175,7 +178,7 @@ def main():
             deg = deg + 10
             cv2.destroyAllWindows()
 
-        with open('multi_marker2.pickle', 'wb') as f:
+        with open('../pickles/multi_marker2.pickle', 'wb') as f:
             pickle.dump([pos_truth, pos_calc, rot_vec, rot_theta], f)
     
     finally:

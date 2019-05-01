@@ -1,3 +1,6 @@
+import sys
+sys.path.append('../../')
+
 import numpy as np
 import cv2
 import cv2.aruco as aruco
@@ -113,7 +116,7 @@ def main():
     dictionary, _ = setup(cam, align,  marker_IDs, num_markers, comm_marker_id)
     
     # store dictionary in pickle
-    with open('stationary_marker'+str(num_markers)+'.pickle', 'wb') as f:
+    with open('../pickles/stationary_marker'+str(num_markers)+'.pickle', 'wb') as f:
         pickle.dump(dictionary, f)
 
 if __name__ == "__main__":

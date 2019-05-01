@@ -5,7 +5,7 @@ from stl import mesh
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
-my_mesh = mesh.Mesh.from_file('CRANIAL HEADS_Head_1_001_centered.stl')
+my_mesh = mesh.Mesh.from_file('data/CRANIAL HEADS_Head_1_001_centered.stl')
 
 print(my_mesh.points[0])
 print(my_mesh.vectors[0])

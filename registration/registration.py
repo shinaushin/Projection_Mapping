@@ -41,7 +41,7 @@ def main():
     print(tf_dict)
 
     # load target obj
-    my_mesh = mesh.Mesh.from_file('CRANIAL HEADS_Head_1_001_centered.stl')
+    my_mesh = mesh.Mesh.from_file('data/CRANIAL HEADS_Head_1_001_centered.stl')
 
     all_pts = []
     for vector in my_mesh.vectors:

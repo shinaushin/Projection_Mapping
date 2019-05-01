@@ -1,3 +1,6 @@
+import sys
+sys.path.append('../../')
+
 from pivot_cal import calibrate
 import math
 import numpy as np
@@ -8,7 +11,6 @@ import pickle
 from Realsense import RealSense
 from rot_mat_euler_angles_conversion import rotToEuler
 import matplotlib.pyplot as plt
-import sys
 
 def main():
     cam = RealSense()
@@ -41,12 +43,12 @@ def main():
         x[2] = x[2] + ground_truth
         pivot_val.append(x)
 
-    with open('pivot_cal_test_markertool'+str(num_markers)+'.pickle', 'wb') as f:
+    with open('../pickles/pivot_cal_test_markertool'+str(num_markers)+'.pickle', 'wb') as f:
         pickle.dump(pivot_val, f)
 
 
 def plot(num_markers):
-    with open('pivot_cal_test_markertool'+str(num_markers)+'.pickle', 'rb') as f:
+    with open('../pickles/pivot_cal_test_markertool'+str(num_markers)+'.pickle', 'rb') as f:
         pivot_val = pickle.load(f)
 
     # box plot
@@ -63,7 +65,7 @@ def plot(num_markers):
     plt.boxplot(np.array(pivot_val).T.tolist())
     plt.xticks([1, 2, 3], ['X', 'Y', 'Z'])
 
-    filename = 'pivot_cal_plots/tool'+str(num_markers)+'_boxplot.jpg'
+    filename = '../plots/tool'+str(num_markers)+'_boxplot.jpg'
     plt.savefig(filename)
 
     # mean and stddev plot
@@ -80,7 +82,7 @@ def plot(num_markers):
 
     plt.xticks([1, 2, 3], ['X', 'Y', 'Z'])
 
-    filename = 'pivot_cal_plots/tool'+str(num_markers)+'_mean_stddev.jpg'
+    filename = '../plots/tool'+str(num_markers)+'_mean_stddev.jpg'
     plt.savefig(filename)
 
     plt.show()

@@ -1,3 +1,6 @@
+import sys
+sys.path.append('../../')
+
 import math
 import numpy as np
 import cv2
@@ -124,7 +127,7 @@ def main():
     num_markers = len(marker_IDs)
     comm_marker_id = marker_IDs[-1]
 
-    with open('markertool'+str(num_markers)+'.pickle', 'rb') as f:
+    with open('../pickles/markertool'+str(num_markers)+'.pickle', 'rb') as f:
         tf_dict = pickle.load(f)
 
     # User input of how long to do calibration for
@@ -133,7 +136,7 @@ def main():
 
     x = calibrate(cam, align, marker_IDs, num_markers, comm_marker_id, tf_dict, num_pts)
 
-    with open('test_pivot_cal_markertool'+str(num_markers)+'.pickle', 'wb') as f:
+    with open('../pickles/test_pivot_cal_markertool'+str(num_markers)+'.pickle', 'wb') as f:
         pickle.dump(x, f);
 
 if __name__ == "__main__":

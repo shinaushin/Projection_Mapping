@@ -1,3 +1,6 @@
+import sys
+sys.path.append('../../')
+
 import numpy as np
 import cv2
 import cv2.aruco as aruco
@@ -8,7 +11,6 @@ import math
 from rot_mat_euler_angles_conversion import rotToEuler
 from marker_setup import setup
 import matplotlib.pyplot as plt
-import sys
 
 def main():
     cam = RealSense()
@@ -40,7 +42,7 @@ def main():
 
 
 def plot(num_markers):
-    with open('marker_setup_test_markertool'+str(num_markers)+'.pickle', 'rb') as f:
+    with open('../pickles/marker_setup_test_markertool'+str(num_markers)+'.pickle', 'rb') as f:
         angle_list = pickle.load(f)
 
     # box plot
@@ -61,7 +63,7 @@ def plot(num_markers):
     else:
         plt.xticks([1, 2, 3, 4], [r'$\alpha_{12}$', r'$\alpha_{23}$', r'$\alpha_{34}$', r'$\alpha_{41}$'])
 
-    filename = 'tool_setup_plots/tool'+str(num_markers)+'_boxplot.jpg'
+    filename = '../plots/tool'+str(num_markers)+'_boxplot.jpg'
     plt.savefig(filename)
 
     # mean and stddev plot
@@ -81,7 +83,7 @@ def plot(num_markers):
     else:
         plt.xticks([1, 2, 3, 4], [r'$\alpha_{12}$', r'$\alpha_{23}$', r'$\alpha_{34}$', r'$\alpha_{41}$'])
 
-    filename = 'tool_setup_plots/tool'+str(num_markers)+'_mean_stddev.jpg'
+    filename = '../plots/tool'+str(num_markers)+'_mean_stddev.jpg'
     plt.savefig(filename)
 
     plt.show()
@@ -89,4 +91,4 @@ def plot(num_markers):
 
 if __name__ == "__main__":
     # main()
-    plot(7)
+    plot(7) # 7 = number of markers on tool, unfortunately user needs to manually change
