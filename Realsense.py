@@ -45,7 +45,8 @@ class RealSense:
                 corners2 = cv2.cornerSubPix(gray, np.array(corners[i]), (11,11), (-1,-1), self.criteria)
 
                 # estimate pose of each marker, prone to bad estimations
-                rvec, tvec, _ = aruco.estimatePoseSingleMarkers(corners2, 0.055, self.newcameramtx, self.dist)
+                # IMPORTANT: change marker size as appropriately
+                rvec, tvec, _ = aruco.estimatePoseSingleMarkers(corners2, 0.025, self.newcameramtx, self.dist)
                 rvecs.append(rvec)
                 tvecs.append(tvec)
         # print(rvecs)

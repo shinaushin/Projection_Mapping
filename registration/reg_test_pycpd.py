@@ -1,7 +1,7 @@
 from functools import partial
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-from pycpd import deformable_registration
+from pycpd import rigid_registration
 import numpy as np
 import time
 
@@ -20,41 +20,25 @@ def visualize(iteration, error, X, Y, ax):
 def main():
     
     target = np.loadtxt('../data/heart_scan_processed.txt')
-    source = np.loadtxt('../data/heart_scan_scaled.txt')
-    '''
-    X = target
-    Y = source[:len(target),:]
-    '''    
+    source = np.loadtxt('../data/heart_scan_processed.txt')    
     
-    X = target[:1000,:]
-    Y = source[:1000,:]
-    print(len(X))
-    print(len(Y))
-    
-    '''
-    fish_target = np.loadtxt('../pycpd/data/fish_target.txt')
-    X1 = np.zeros((fish_target.shape[0], fish_target.shape[1] + 1))
-    X1[:,:-1] = fish_target
-    X2 = np.ones((fish_target.shape[0], fish_target.shape[1] + 1))
-    X2[:,:-1] = fish_target
-    X = np.vstack((X1, X2))
+    X = source[780:800,:]
+    pts = X.transpose()
+    theta = np.radians(30)
+    c,s = np.cos(theta), np.sin(theta)
+    R = np.array( ( (c, -s, 0), (s, c, 0), (0, 0, 1) ) )
+    pts = np.matmul(R, pts)
+    source = pts.transpose()    
 
-    fish_source = np.loadtxt('../pycpd/data/fish_source.txt')
-    Y1 = np.zeros((fish_source.shape[0], fish_source.shape[1] + 1))
-    Y1[:,:-1] = fish_source
-    Y2 = np.ones((fish_source.shape[0], fish_source.shape[1] + 1))
-    Y2[:,:-1] = fish_source
-    Y = np.vstack((Y1, Y2))
-    '''
+    target = target[700:900,:]
+
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
     callback = partial(visualize, ax=ax)
 
-    # print(type(X))
-    # print(fish_target)
-
-    reg = deformable_registration(**{ 'X': X, 'Y': Y })
-    reg.register(callback)
+    reg = rigid_registration(**{ 'X': source, 'Y': target })
+    TY, (s_reg, R_reg, t_reg) = reg.register(callback)
+    print(s_reg, R_reg, t_reg)
     plt.show()
 
 if __name__ == '__main__':
