@@ -85,8 +85,8 @@ plots of results of marker pose estimation using only one marker with corrected 
 plots of results of marker pose estimation using two markers with corrected error metrics
 
 #### scripts/data_viz*.py
-Use case: python data_viz*.py "<name of pickle to deserialize>" "<name of folder to put plots in>"
-  
+Use case: python data_viz*.py "name of pickle to deserialize" "name of folder to put plots in" (more detail of inputs in python script)
+
 Deserializes pickle containing all data collected from pose_est_accuracy_eval.py
 
 Plots box plots and mean/stddev plots for x,y,z,mag error in position and quaternion,theta error in orientation. Assumes that calibration is done in increments of 10 deg from 30 to 150 degrees (can be changed in code)
@@ -130,17 +130,6 @@ Can access Intel-saved intrinsics and extrinsics
 #### record_points.py
 
 Python script to record points on object touched with marker for fixed set of stationary markers
-If markers set stationary around object are ever moved, new points need to be recorded
-
-TODO: It is easy to record where the points on the object are using the marker tool. However the issue is how do we record the location of these points relative to the stationary markers? Currently, the markers on the panels are simply single markers on each side. This will most likely be prone to pose ambiguity, and in situations where we can only detect one marker, relying on that  marker could lead to very inaccurate results. A way to minimize this would be to incorporate multiple markers. However as the setup is right now, each marker panel is set arbitrarily in the environment, and each one will be prone to pose ambiguity. There is nooinformation we know as ground truth between any two markers. All research on improving pose estimation using multiple markers that you know assume that you know the relative transformations between each marker.
-
-One possible solution is to put two markers within the 50x50 mm on each side of the marker panel. Because the two markers will be posted on the same marker panel and printed on the same paper, we will know the ground truth relative position of all the marker corners. We can then use solvepnp on 8 points as opposed to the minimum of 4. However, even with 8 points, the system is still prone to pose ambiguity but most likely much less often. One thing to further analyze is how often a bad pose is produced using solvepnp on 8 points. If a bad pose is produced not very often, a sliding window may be sufficient to minimize the effect of the bad pose. In addition, if multiple of these marker panels are detected, we can average the calculated point on the object to minimize the error.
-
-Another possible solution could be to use the marker panels with single markers on them and ignore all markers whose orientation  in all 3 axes is less than some threshold angle (or prefer markers whose orientation differ heavily from the camera frame -- weighted approach). If all three axes have very little rotation, then that means the camera is looking straight on at a marker, and this marker is heavily prone to pose ambiguity.
-
-Another enhancement / solution is through using IPPE (Infinitesimal Plane-based Pose Estimation). This python package will output the two ambiguous pose estimations for the marker. And with the transformation matrix for each pose, we can compare the 3D position error of the four corners with the depth map position of the corners. Whichever one has smaller corner position error contains the correct transformation matrix.
-
-4/1 Brainstorm: print smaller version of 6-sided marker tool to mount on patient skull. Even when patient head is moving, we wil have fixed reference frame between marker and patient skull. Another idea is to print workstation (eg poster) with multiple markers on it. It is good in that you will know relative transformation between markers but it is bad because you will have to re-register everytime the object is moved.
 
 #### reg_test_Open3D.py
 
