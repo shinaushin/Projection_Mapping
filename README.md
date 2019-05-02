@@ -22,9 +22,9 @@ Old files that are not used any more
 
 ### IR_calibration.py
 
-Same thing as camera_calibration.py except for IR camera.
+Python script used to calibrate infrared camera and will print intrinsics of camera (camera matrix and distortion coefficients)
 
-Uses same checkerboard and same number of images for OpenCV calibration (numbers can be changed in code)
+This script will work for any 4x3 checkerboard (size can be changed in code) and will collect 20 different images (number of images used can also be changed in code) before conducted the calibration using OpenCV. This script does not save the images.
 
 ### marker_detection_realsense.py
 
@@ -39,6 +39,8 @@ Draws checkerboard corners detected on image (4x3 checkerboard -- can be changed
 ### marker_tool_setup/
 
 #### pickles/markertool*.pickle
+
+pickle is a data format used by Python to easily serialize and deserialize information and is the main way I use to save data that I want to use for later at any point in time.
 
 For each marker tool, we specify the frame of the top marker as the overall marker tool coordinate frame.
 
@@ -68,9 +70,7 @@ Saves plot data in a pickle file
 
 #### pickles/acc_eval*.pickle OR multi_marker.pickle
 
-pickle is a data format used by Python to easily serialize and deserialize information and is the main way I use to save data that I want to use for later at any point in time
-
-These pickle files contain data from the marker pose estimation accuracy evaluations conducted to visualize the position and orientation error
+Contain data from the marker pose estimation accuracy evaluations conducted to visualize the position and orientation error
 
 #### plots/marker_det_plots_bad_rot_metric/
 
@@ -152,9 +152,9 @@ Test file for Coherent Point Drift algorithm written in Python
 
 ### RGB_camera_calibration.py
 
-Python script used to calibrate camera and will print intrinsics of camera (camera matrix and distortion coefficients)
+Same thing as IR_calibration.py except for RGB camera.
 
-Although there were default parameters that were stored in the Realsense camera, they were not at all accurate for unknown reasons. This script will work for any 4x3 checkerboard (size can be changed in code) and will collect 20 different images (number of images used can also be changed in code) before conducted the calibration using OpenCV. This script does not save the images.
+Uses same checkerboard and same number of images for OpenCV calibration (numbers can be changed in code)
 
 ### rot_mat_euler_angles_conversion.py
 
