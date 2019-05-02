@@ -85,7 +85,7 @@ plots of results of marker pose estimation using only one marker with corrected 
 plots of results of marker pose estimation using two markers with corrected error metrics
 
 #### scripts/data_viz*.py
-Use case: python data_viz*.py <name of pickle to deserialize> <name of folder to put plots in>
+Use case: python data_viz*.py "<name of pickle to deserialize>" "<name of folder to put plots in>"
   
 Deserializes pickle containing all data collected from pose_est_accuracy_eval.py
 
