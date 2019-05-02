@@ -8,12 +8,6 @@ Unless otherwise stated, all use cases for python files are simply: python <file
 
 Also, always run files while in the directory that the file is in because Python imports depend on the directory in which you run the file.
 
-### acc_eval*.pickle / multi_marker.pickle
-
-pickle is a data format used by Python to easily serialize and deserialize information and is the main way I use to save data that I want to use for later at any point in time
-
-These pickle files contain data from the marker pose estimation accuracy evaluations conducted to visualize the position and orientation error
-
 ### Archive/
 
 Not significant
@@ -72,6 +66,12 @@ Saves plot data in a pickle file
 
 ### OpenCV_pose_acc_eval/
 
+#### pickles/acc_eval*.pickle OR multi_marker.pickle
+
+pickle is a data format used by Python to easily serialize and deserialize information and is the main way I use to save data that I want to use for later at any point in time
+
+These pickle files contain data from the marker pose estimation accuracy evaluations conducted to visualize the position and orientation error
+
 #### plots/marker_det_plots_bad_rot_metric/
 
 plots of results of marker pose estimation using faulty metric for orientation error
@@ -97,7 +97,7 @@ Calibration procedure is done in increments of 10 deg from 30 to 150 deg. There 
 
 ### pivot_cal/
 
-#### pivot_cal.py
+#### scripts/pivot_cal.py
 
 Performs pivot calibration of user-specified marker tool
 
@@ -107,7 +107,7 @@ Saves that position in pickle file
 
 Dimensions: hexagon - 211 mm, square - 210 mm
 
-#### pivot_cal_test.py
+#### scripts/pivot_cal_test.py
 
 Same as marker_setup_test.py except it is testing the pivot_cal.py
 
