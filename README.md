@@ -20,33 +20,11 @@ Not significant
 
 Old files that are not used any more
 
-### camera_calibration.py
+### heart_data/
 
-Python script used to calibrate camera and will print intrinsics of camera (camera matrix and distortion coefficients)
+Files related to testing registration using heart model in lab
 
-Although there were default parameters that were stored in the Realsense camera, they were not at all accurate for unknown reasons. This script will work for any 4x3 checkerboard (size can be changed in code) and will collect 20 different images (number of images used can also be changed in code) before conducted the calibration using OpenCV. This script does not save the images.
-
-### data/
-
-#### heart-scan3d.txt
-OBJ file converted to txt file
-
-#### heart_scan_processed.txt
-txt file parsed from heart-scan3d.txt so that we only keep vertices
-
-#### heart_scan_scaled.txt
-original heart scaled by 2. For the purpose of testing different registration packages.
-
-#### scale_data.py
-reads in txt file with vertex data and multiplies everything by a scalar number
-
-### data_viz*.py
-Use case: python data_viz*.py <name of pickle to deserialize> <name of folder to put plots in>
-  
-
-Deserializes pickle containing all data collected from pose_est_accuracy_eval.py
-
-Plots box plots and mean/stddev plots for x,y,z,mag error in position and quaternion,theta error in orientation. Assumes that calibration is done in increments of 10 deg from 30 to 150 degrees (can be changed in code)
+Old files that are not used any more
 
 ### IR_calibration.py
 
@@ -64,19 +42,15 @@ Writes marker 3D coordinate in camera coordinate frame on image
 
 Draws checkerboard corners detected on image (4x3 checkerboard -- can be changed in code)
 
-### marker_det_plots_bad_rot_metric/
+### marker_tool_setup/
 
-plots of results of marker pose estimation using faulty metric for orientation error
+#### pickles/markertool*.pickle
 
-### marker_det_plots_one_marker/
+For each marker tool, we specify the frame of the top marker as the overall marker tool coordinate frame.
 
-plots of results of marker pose estimation using only one marker with corrected error metrics
+This pickle file contains the transformation of every other marker to that top marker
 
-### marker_det_plots_two_markers/
-
-plots of results of marker pose estimation using two markers with corrected error metrics
-
-### marker_setup.py
+#### scripts/marker_setup.py
 
 python script to calculate transformation from each marker on the side of the marker tool to the top marker.
 
@@ -86,7 +60,7 @@ Verifies that transformations are reasonable by making the angle of rotation bet
 
 For example, suppose the marker tool used had 7 markers. This means there is 1 marker on top and 6 markers on the side. The tool is therefore in a hexagonal shape. Therefore the angle of rotation for any two consecutive markers should be approximately 60 degrees.
 
-### marker_setup_test.py
+#### scripts/marker_setup_test.py
 
 python script to evaluation accuracy of marker_setup.py
 
@@ -96,13 +70,34 @@ User can define how many marker setup procedures to conduct before doing the err
 
 Saves plot data in a pickle file
 
-### markertool*.pickle
+### OpenCV_pose_acc_eval/
 
-For each marker tool, we specify the frame of the top marker as the overall marker tool coordinate frame.
+#### plots/marker_det_plots_bad_rot_metric/
 
-This pickle file contains the transformation of every other marker to that top marker
+plots of results of marker pose estimation using faulty metric for orientation error
 
-### pivot_cal.py
+#### plots/marker_det_plots_one_marker/
+
+plots of results of marker pose estimation using only one marker with corrected error metrics
+
+#### plots/marker_det_plots_two_markers/
+
+plots of results of marker pose estimation using two markers with corrected error metrics
+
+#### scripts/data_viz*.py
+Use case: python data_viz*.py <name of pickle to deserialize> <name of folder to put plots in>
+  
+Deserializes pickle containing all data collected from pose_est_accuracy_eval.py
+
+Plots box plots and mean/stddev plots for x,y,z,mag error in position and quaternion,theta error in orientation. Assumes that calibration is done in increments of 10 deg from 30 to 150 degrees (can be changed in code)
+
+#### scripts/pose_est_accuracy_eval.py
+
+Calibration procedure is done in increments of 10 deg from 30 to 150 deg. There are two markers (marker1 and marker2) set coplanar to a 4x3 checkerboard. The transformation among the markers and the checkerboard are all known. The "ground truth" transformation between the camera and marker1 is calculated through the checkerboard because we assume that the error in detecting the checkerboard is very small from the camera calibration. The mesaured/observed transformation from the camera frame to the marker1 frame is computed through solvepnp using 8 points (4 corners of marker1 and 4 additional corners from marker2 transformed to frame of marker1).
+
+### pivot_cal/
+
+#### pivot_cal.py
 
 Performs pivot calibration of user-specified marker tool
 
@@ -112,13 +107,11 @@ Saves that position in pickle file
 
 Dimensions: hexagon - 211 mm, square - 210 mm
 
-### pivot_cal_test.py
+#### pivot_cal_test.py
 
 Same as marker_setup_test.py except it is testing the pivot_cal.py
 
-### pose_est_accuracy_eval.py
-
-Calibration procedure is done in increments of 10 deg from 30 to 150 deg. There are two markers (marker1 and marker2) set coplanar to a 4x3 checkerboard. The transformation among the markers and the checkerboard are all known. The "ground truth" transformation between the camera and marker1 is calculated through the checkerboard because we assume that the error in detecting the checkerboard is very small from the camera calibration. The mesaured/observed transformation from the camera frame to the marker1 frame is computed through solvepnp using 8 points (4 corners of marker1 and 4 additional corners from marker2 transformed to frame of marker1).
+### pts_stat_marker_frame_skull.pickle
 
 ### Realsense.py
 
@@ -157,21 +150,14 @@ Test file for Open3D package rigid registration method
 
 Test file for Coherent Point Drift algorithm written in Python
 
+### RGB_camera_calibration.py
+
+Python script used to calibrate camera and will print intrinsics of camera (camera matrix and distortion coefficients)
+
+Although there were default parameters that were stored in the Realsense camera, they were not at all accurate for unknown reasons. This script will work for any 4x3 checkerboard (size can be changed in code) and will collect 20 different images (number of images used can also be changed in code) before conducted the calibration using OpenCV. This script does not save the images.
+
 ### rot_mat_euler_angles_conversion.py
 
 contains methods for converting rotation matrix to ZYX euler angles and vice versa
 
-### test/
-
-Not significant.
-
-Folder that contains plots created when testing data viz files.
-
-
-## Future Steps
-
-* Migrate to ROS
-
-* use ar_track_alvar package for ArUco marker detection and pose estimation
-
-* use Intel dynamic calibration tool to recalibrate Realsense camera (https://downloadcenter.intel.com/download/28517/Intel-RealSense-D400-Series-Calibration-Tools-and-API?v=t)
+### stationary_marker*.pickle
