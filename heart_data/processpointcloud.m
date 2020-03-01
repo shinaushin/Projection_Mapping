@@ -1,3 +1,7 @@
+% processpointcloud.m
+% author: Austin Shin
+
+% Plots processed point cloud
 txtfile = 'pointcloud.txt';
 A = importdata(txtfile);
 dimensions = size(A);

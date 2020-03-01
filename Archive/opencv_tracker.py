@@ -1,3 +1,6 @@
+# opencv_tracker.py
+# @author: Austin Shin
+
 import pyrealsense2 as rs
 import numpy as np
 import cv2
@@ -7,11 +10,9 @@ import imutils
 import Realsense
 
 cam = Realsense()
-profile = cam.pipeline.start(config)
-
+profile = cam.pipeline.start(cam.config)
 depth_sensor = profile.get_device().first_depth_sensor()
 depth_scale = depth_sensor.get_depth_scale()
-
 align_to = rs.stream.color
 align = rs.align(align_to)
 
@@ -41,6 +42,7 @@ print("Initializing tracking system...")
 try:
   print("Press s to put bounding box around desired object.")
   while True:
+    # get frame from camera
     frames = cam.pipeline.wait_for_frames()
     aligned_frames = align.process(frames)
     aligned_depth_frame = aligned_frames.get_depth_frame()
@@ -58,7 +60,7 @@ try:
 
       if success: # object is still tracked in image
         (x, y, w, h) = [int(v) for v in box]
-        cv2.rectangle(frame, (x,y), (x+w, y+h), (0, 255, 0), 2) # put bounding box
+        cv2.rectangle(frame, (x,y), (x+w, y+h), (0, 255, 0), 2) # bounding box
 
       fps.update()
       fps.stop()
