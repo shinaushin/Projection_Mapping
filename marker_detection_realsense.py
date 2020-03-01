@@ -6,6 +6,17 @@ from Realsense import RealSense as Realsense
 
 
 def draw(img, corners, imgpts):
+    """
+    Draws axis associated with detected marker
+
+    Args:
+        img: image
+        corners: 4 corners of detected marker
+        imgpts: points associated with end of x/y/z axis to be drawn
+
+    Returns:
+        annotated image
+    """
     corner = tuple(corners[0].ravel())
     img = cv2.line(img, corner, tuple(imgpts[2].ravel()), (255,0,0), 5)
     img = cv2.line(img, corner, tuple(imgpts[1].ravel()), (0,255,0), 5)
@@ -13,6 +24,15 @@ def draw(img, corners, imgpts):
     return img
 
 def main():
+    """
+    Tests marker detection with Intel Realsense camera
+
+    Args:
+        None
+
+    Returns:
+        None
+    """
     cam = Realsense()
     # cam.access_intr_and_extr()
     profile = cam.pipeline.start(cam.config)
@@ -39,15 +59,17 @@ def main():
         
             if np.all(ids != None): # if markers are detected
                 for i in range(0, ids.size):
-                    aruco.drawAxis(frame, cam.newcameramtx, cam.dist, rvecs[i], tvecs[i], 0.1)  # Draw axis
-                aruco.drawDetectedMarkers(frame, corners) #Draw a square around the markers
+                    aruco.drawAxis(frame, cam.newcameramtx, cam.dist, rvecs[i],
+                        tvecs[i], 0.1)  # Draw axis
+                aruco.drawDetectedMarkers(frame, corners) # draw square around markers
 
                 ###### DRAW ID #####
                 strg = ''
                 for i in range(0, ids.size):
                     strg += str(ids[i][0])+', '
 
-                cv2.putText(frame, "Id: " + strg, (0,25), font, 1, (0,255,0),2,cv2.LINE_AA)
+                cv2.putText(frame, "Id: " + strg, (0,25), font, 1, (0,255,0), 2,
+                    cv2.LINE_AA)
 
 	        ###### Output marker  positions in camera frame ######
  	        # output tvec
@@ -55,26 +77,31 @@ def main():
                 dy = 40
                 for i in range(0, ids.size):
                     y = y0 + i*dy
-                cv2.putText(frame, str(tvecs[i][0]), (0, y), font, 1, (0,255,0), 2, cv2.LINE_AA)
+                cv2.putText(frame, str(tvecs[i][0]), (0, y), font, 1, (0,255,0),
+                    2, cv2.LINE_AA)
 
             else:
                 ##### DRAW "NO IDS" #####
-                cv2.putText(frame, "No Ids", (0,64), font, 1, (0,255,0),2,cv2.LINE_AA)
+                cv2.putText(frame, "No Ids", (0,64), font, 1, (0,255,0), 2,
+                    cv2.LINE_AA)
 
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             ret, corners = cv2.findChessboardCorners(gray, (4,3), None)
             if ret == True:
-                corners2 = cv2.cornerSubPix(gray, corners,(11,11), (-1,-1), cam.criteria)
+                corners2 = cv2.cornerSubPix(gray, corners,(11,11), (-1,-1),
+                    cam.criteria)
                 corners2 = corners2[::-1]
                 # print(corners2)
                 # print(objp)
                 frame = cv2.drawChessboardCorners(frame, (4,3), corners2, ret)
                 # Find the rotation and translation vectors.
-                _, rvecs, tvecs = cv2.solvePnP(objp, corners2, cam.newcameramtx, cam.dist)
+                _, rvecs, tvecs = cv2.solvePnP(objp, corners2, cam.newcameramtx,
+                    cam.dist)
                 rot, _ = cv2.Rodrigues(rvecs)
                 # print(rot)
                 # project 3D points to image plane
-                imgpts, jac = cv2.projectPoints(axis, rvecs, tvecs, cam.newcameramtx, cam.dist)
+                imgpts, jac = cv2.projectPoints(axis, rvecs, tvecs,
+                    cam.newcameramtx, cam.dist)
                 frame = draw(frame, corners2, imgpts)
 
             # Display the resulting frame

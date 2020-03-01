@@ -1,10 +1,23 @@
-import numpy as np
+# RGB_cam_calibration.py
+# author: Austin Shin
+
 import cv2
 import cv2.aruco as aruco
+import numpy as np
+
 import pyrealsense2 as rs
 from Realsense import RealSense
 
 def main():
+    """
+    Performs camera calibration for RGB camera on Intel Realsense
+
+    Args:
+        None
+
+    Returns:
+        None
+    """
     cam = RealSense()
 
     profile = cam.pipeline.start(cam.config)
@@ -35,8 +48,10 @@ def main():
 
             ret, corners = cv2.findChessboardCorners(gray, (4,3), None)
             if ret == True: # if corners detected
-                corners2 = cv2.cornerSubPix(gray, corners, (11,11), (-1,-1), cam.criteria) # subpixel refinement
-                img = cv2.drawChessboardCorners(color_image, (4,3), corners, ret)
+                corners2 = cv2.cornerSubPix(gray, corners, (11,11), (-1,-1),
+                    cam.criteria) # subpixel refinement
+                img = cv2.drawChessboardCorners(color_image, (4,3), corners,
+                    ret)
                 cv2.imshow('img', img)
                 retval = cv2.waitKey(10)
 
@@ -47,7 +62,8 @@ def main():
                     print("Data point collected")
         
         print("Starting calibration") 
-        ret, mtx ,dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
+        ret, mtx ,dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints,
+            gray.shape[::-1], None, None)
 
         print(ret)
         print(mtx)

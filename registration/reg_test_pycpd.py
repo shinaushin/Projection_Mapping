@@ -11,13 +11,17 @@ from pycpd import rigid_registration
 
 def visualize(iteration, error, X, Y, ax):
     """
-
+    Plots two point clouds registered to each other
 
     Args:
-
+        iteration: number of iterations
+        error: registration err
+        X: ground truth
+        y: measured data
+        ax: axis associated with figure
 
     Returns:
-
+        None
     """
     plt.cla()
     ax.scatter(X[:,0],  X[:,1], X[:,2], color='red', label='Target')
@@ -27,18 +31,18 @@ def visualize(iteration, error, X, Y, ax):
     plt.draw()
     plt.pause(0.001)
 
-# great visualization, works well with small batches of data
-# need to find appropriate way of downsampling data
-# can define threshold error in pycpd source files
 def main():
     """
-
+    Creates two separate point clouds and performs rigid registration.
+    Great visualization, works well with small batches of data.
+    Need to find appropriate way of downsampling data
+    Can define threshold error in pycpd source files
 
     Args:
-
+        None
 
     Returns:
-    
+        None
     """
     target = np.loadtxt('../data/heart_scan_processed.txt')
     source = np.loadtxt('../data/heart_scan_processed.txt')    

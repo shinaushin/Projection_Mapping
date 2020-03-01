@@ -1,25 +1,37 @@
+# registration.py
+# author: Austin Shin
+
 import sys
 sys.path.append('../')
 
-import pickle
-import numpy as np
 import cv2
-import pyrealsense2 as rs
-from Realsense import RealSense as Realsense
-import math
-from rot_mat_euler_angles_conversion import rotToEuler
 import cv2.aruco as aruco
-
 from functools import partial
+import math
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-from pycpd import rigid_registration
+import numpy as np
+import pickle
+from stl import mesh
 import time
 
-from stl import mesh
+import pyrealsense2 as rs
+from Realsense import RealSense as Realsense
+
+from pycpd import rigid_registration
 from record_points import find_best_marker
+from rot_mat_euler_angles_conversion import rotToEuler
 
 def main():
+    """
+    Registers realtime pointcloud of skull with stl model
+
+    Args:
+        None
+
+    Returns:
+        None
+    """
     cam = Realsense()
     profile = cam.pipeline.start(cam.config)
     depth_sensor = profile.get_device().first_depth_sensor()

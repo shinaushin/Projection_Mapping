@@ -4,9 +4,16 @@ import cv2.aruco as aruco
 import pyrealsense2 as rs
 from Realsense import RealSense
 
-### same as camera_calibration.py except frames are IR frames, not RGB frames
-
 def main():
+    """
+    Calibrates IR cameras on Intel Realsense camera
+
+    Args:
+        None
+
+    Returns:
+        None
+    """
     cam = RealSense()
     # print(cam.access_intr_and_extr())
 
