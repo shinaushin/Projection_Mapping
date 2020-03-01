@@ -1,18 +1,17 @@
-import numpy as np
-from stl import mesh
-# from mpl_toolkits import mplot3d
-# from matplotlib import pyplot
+# test_stl.py
+# author: Austin Shin
+
 import matplotlib.pyplot as plt
+import numpy as np
+
 from mpl_toolkits.mplot3d import Axes3D
+from stl import mesh
 
 my_mesh = mesh.Mesh.from_file('data/CRANIAL HEADS_Head_1_001_centered.stl')
 
-print(my_mesh.points[0])
-print(my_mesh.vectors[0])
-
 all_pts = []
 for vector in my_mesh.vectors:
-  all_pts.extend(vector / 1000)
+  all_pts.extend(vector / 1000) # convert to meters
 
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
@@ -26,15 +25,3 @@ sub_pts = pts[indices,:]
 ax.scatter(sub_pts[:,0], sub_pts[:,1], sub_pts[:,2])
 
 plt.show()
-
-"""
-figure = pyplot.figure()
-axes = mplot3d.Axes3D(figure)
-
-axes.add_collection3d(mplot3d.art3d.Poly3DCollection(my_mesh.vectors))
-
-scale = my_mesh.points.flatten(-1)
-axes.auto_scale_xyz(scale, scale, scale)
-
-pyplot.show()
-"""

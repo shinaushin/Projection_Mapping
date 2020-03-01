@@ -1,15 +1,30 @@
+# reg_test_Open3D.py
+# author: Austin Shin
+
 # Open3D: www.open3d.org
 # The MIT License (MIT)
 # See license file or visit www.open3d.org for details
 
 # examples/Python/Tutorial/Basic/icp_registration.py
 
-from open3d import *
 import copy
-import pyrealsense2 as rs
 import numpy as np
 
+from open3d import *
+import pyrealsense2 as rs
+
 def draw_registration_result(source, target, transformation):
+    """
+    Visualize registration result
+
+    Args:
+        source: measured data
+        target: ground truth data
+        transformation: registration transformation
+
+    Returns:
+        None
+    """
     source_temp = copy.deepcopy(source)
     target_temp = copy.deepcopy(target)
     source_temp.paint_uniform_color([1, 0.706, 0])
@@ -18,6 +33,16 @@ def draw_registration_result(source, target, transformation):
     draw_geometries([source_temp, target_temp])
 
 def preprocess_point_cloud(pcd, voxel_size):
+    """
+    Preprocesses point cloud data
+
+    Args:
+        pcd: point cloud data
+        voxel_size: downsampling kernel size
+
+    Returns:
+        downsampled point cloud, feature histogram descriptors
+    """
     print(":: Downsample with a voxel size %.3f." % voxel_size)
     pcd_down = voxel_down_sample(pcd, voxel_size)
 
@@ -33,7 +58,24 @@ def preprocess_point_cloud(pcd, voxel_size):
     return pcd_down, pcd_fpfh
 
 def prepare_dataset(voxel_size, source, target):
+    """
+    Transforms source point cloud and preprocesses data
+
+    Args:
+        voxel_size: downsampling kernel size
+        source: measured point cloud
+        target: ground truth point cloud
+
+    Returns:
+        source point cloud
+        target point cloud
+        downsampled source
+        downsampled target
+        feature histogram descriptors for source
+        feature histogram descriptors for target
+    """
     print(":: Load two point clouds and disturb initial pose.")
+    # disturbance (aka transformation) determined by user
     trans_init = np.asarray([[0.0, 0.0, 1.0, 0.0],
                             [1.0, 0.0, 0.0, 0.0],
                             [0.0, 1.0, 0.0, 0.0],
@@ -47,6 +89,19 @@ def prepare_dataset(voxel_size, source, target):
 
 def execute_global_registration(
         source_down, target_down, source_fpfh, target_fpfh, voxel_size):
+    """
+    Conducts registration using Open3D
+
+    Args:
+        source_down: downsampled source point cloud
+        target_down: downsampled target point cloud
+        source_fpfh: feature histogram descriptors for source
+        target_fpfh: feature histogram descriptors for target
+        voxel_size: downsampling kernel size
+
+    Returns:
+        registration result
+    """
     distance_threshold = voxel_size * 1.5
     print(":: RANSAC registration on downsampled point clouds.")
     print("   Since the downsampling voxel size is %.3f," % voxel_size)
@@ -61,6 +116,19 @@ def execute_global_registration(
     return result
 
 def refine_registration(source, target, source_fpfh, target_fpfh, voxel_size):
+    """
+    Performs registration refinement based on ICP
+
+    Args:
+        source: measured point cloud
+        target: ground truth data
+        source_fpfh: feature histogram descriptors for source
+        target_fpfh: feature histogram descriptors for target
+        voxel_size: downsampling kernel size
+
+    Returns:
+        registration result
+    """
     distance_threshold = voxel_size * 0.4
     print(":: Point-to-plane ICP registration is applied on original point")
     print("   clouds to refine the alignment. This time we use a strict")
@@ -79,7 +147,6 @@ if __name__ == "__main__":
 
     test = read_point_cloud("../data/heart_scan_processed.txt", format="xyz")
     draw_geometries([test])
-
 
     voxel_size = 0.01
     source, target, source_down, target_down, source_fpfh, target_fpfh = prepare_dataset(voxel_size, source, test)

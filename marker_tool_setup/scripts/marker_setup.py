@@ -1,21 +1,39 @@
+# marker_setup.py
+# author: Austin Shin
+
 import sys
 sys.path.append('../../')
 
-import numpy as np
 import cv2
 import cv2.aruco as aruco
+import math
+import numpy as np
+import pickle
+
 import pyrealsense2 as rs
 from Realsense import RealSense
-import pickle
-import math
+
 from rot_mat_euler_angles_conversion import rotToEuler
 
 
 def setup(cam, align, marker_IDs, num_markers, comm_marker_id):
-    tolerance = 4
+    """
+    Calculates orientation difference between adjacent markers.
+
+    Args:
+        cam: Realsense parameter
+        align: Realsense parameter
+        marker_IDs: list of IDs of markers on digitizer
+        num_markers: number of markers in digitizer
+        comm_marker_id: ID of base marker
+
+    Returns:
+        dict storing angle data, list of angles between consecutive markers
+    """
+    tolerance = 4 # set by user
 
     tf_dict = {}
-    while (len(tf_dict) < num_markers-1):
+    while (len(tf_dict) < num_markers-1): # until we have info on all adjacent pairs of markers
         frames = cam.pipeline.wait_for_frames()
         aligned_frames = align.process(frames)
         color_frame = aligned_frames.get_color_frame()
@@ -27,17 +45,19 @@ def setup(cam, align, marker_IDs, num_markers, comm_marker_id):
         # find transformation between comm_marker_id and other ids
         if np.all(ids != None) and len(ids) > 1 and comm_marker_id in ids:
             for i in range(0, ids.size):
-                aruco.drawAxis(frame, cam.newcameramtx, cam.dist, rvecs[i], tvecs[i], 0.1)  # Draw axis
-            aruco.drawDetectedMarkers(frame, corners) #Draw a square around the markers
+                aruco.drawAxis(frame, cam.newcameramtx, cam.dist, rvecs[i], 
+                    tvecs[i], 0.1) # draw axis
+            aruco.drawDetectedMarkers(frame, corners) # draw square around markers
             ids.shape = len(ids)
             ids = ids.tolist()
 
-            comm_index = ids.index(comm_marker_id) # index of where comm_marker_id is in ids list
+            comm_index = ids.index(comm_marker_id) # index of comm_marker_id in ids list
             R_comm, _ = cv2.Rodrigues(rvecs[comm_index][0][0])
             t_comm = tvecs[comm_index][0][0]
             t_comm.shape = (3,1)
         
-            # rotation and translation to transform camera coordinate frame to comm_marker_id coordinate frame
+            # rotation and translation to transform camera coordinate frame to
+            # comm_marker_id coordinate frame
             R_comm_T = R_comm.transpose()
             t_comm_inv = np.matmul(-R_comm_T, t_comm)
 
@@ -48,7 +68,8 @@ def setup(cam, align, marker_IDs, num_markers, comm_marker_id):
                     t_i = tvecs[i][0][0]
                     t_i.shape = (3,1)
 
-                    R_tf = np.matmul(R_comm_T, R_i) # transformation of marker_i to comm_marker_id frame
+                    # transformation of marker_i to comm_marker_id frame
+                    R_tf = np.matmul(R_comm_T, R_i)
                     t_tf = np.matmul(R_comm_T, t_i) + t_comm_inv
                     r_tf, _ = cv2.Rodrigues(R_tf)
                     r_tf.shape = (3)
@@ -59,27 +80,33 @@ def setup(cam, align, marker_IDs, num_markers, comm_marker_id):
                     tf_dict[ids[i]].append( r_tf )
                     tf_dict[ids[i]].append( t_tf )
 
-        if len(tf_dict) == num_markers-1:
+        if len(tf_dict) == num_markers-1: # if we finished collecting data
             # print(tf_dict.keys())
             ideal_angle = 360 / (num_markers-1)
             list_angles = []
             for i in range(num_markers-1):
                 marker1 = tf_dict[marker_IDs[i]]
                 marker1_rot, _ = cv2.Rodrigues(marker1[0])
+
+                # relies on assumption that IDs of markers on digitizer start
+                # from 0 and are incremented one by one
                 if i == num_markers-2:
                     j = 0
                 else:
                     j = i + 1
+
                 marker2 = tf_dict[marker_IDs[j]]
                 marker2_rot, _ = cv2.Rodrigues(marker2[0])
                 marker1_rot_T = marker1_rot.transpose()
                 rot_btw_1_2 = np.matmul(marker1_rot_T, marker2_rot)
                 angles = rotToEuler(rot_btw_1_2)
-                y_angle = angles[1] * 180 / 3.1415 # np.absolute(angles[1])*180/3.1415
+                y_angle = angles[1] * 180 / 3.1415
                 list_angles.append(y_angle)
         
             print(list_angles)
             for i in range(len(list_angles)):
+                # if angle does not fit within tolerance, remove from dict to
+                # recollect data
                 if list_angles[i] < ideal_angle - tolerance or list_angles[i] > ideal_angle + tolerance:
                     if marker_IDs[i] in tf_dict:
                         tf_dict.pop(marker_IDs[i])
@@ -101,6 +128,15 @@ def setup(cam, align, marker_IDs, num_markers, comm_marker_id):
     return tf_dict, list_angles
 
 def main():
+    """
+    Execute data collection and angle calculation for digitizer
+
+    Args:
+        None
+
+    Returns:
+        None
+    """
     cam = RealSense()
     profile = cam.pipeline.start(cam.config)
     depth_sensor = profile.get_device().first_depth_sensor()

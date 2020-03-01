@@ -1,16 +1,30 @@
+# data_viz_rot.py
+# author: Austin Shin
+
 import sys
 sys.path.append('../../')
 
-import pickle
-import numpy as np
-import matplotlib.pyplot as plt
 import cv2
 import math
+import matplotlib.pyplot as plt
+import numpy as np
+import pickle
 
-deg_inc = 10
+deg_inc = 10 # set by user
 
 # convert euler angles to rotation matrix
 def eulerToRot(x,y,z):
+    """
+    Convert euler angles to rotation matrix
+
+    Args:
+        x: rotation about x
+        y: rotation about y
+        z: rotation about z
+
+    Returns:
+        rotation matrix
+    """
     R_x = np.array( [ [1, 0, 0],
                       [0, math.cos(x), -math.sin(x)],
                       [0, math.sin(x), math.cos(x)] ])
@@ -25,11 +39,20 @@ def eulerToRot(x,y,z):
 
 # mainly converts error stored in dictionaries into ordered lists
 def preprocess_for_plot(err):
+    """
+    Converts error stored in dictionaries into lists based on order of angles
+
+    Args:
+        err: dictionary containing error values
+
+    Returns:
+        ordered list of error values
+    """
     all_err = []
     mean_err = []
     stddev_err = []
+    # angles used for keys based on specific experimental setup
     keys = [30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150]
-#     keys = [60, 70, 80, 90, 100, 110, 120]
     for key in keys:
         all_err.append(err[key])
         mean_err.append(np.mean(err[key]))
@@ -37,8 +60,16 @@ def preprocess_for_plot(err):
 
     return all_err, mean_err, stddev_err
 
-# returns appropriate title for plot
 def getTitle(mode):
+    """
+    Generates appropriate title for plot
+
+    Args:
+        mode: indicates total magnitude or individual axis
+
+    Returns:
+        appropriate plot title
+    """
     title = ''
     if mode == 0:
         title = 'Accuracy of ArUco Marker 3D Orientation Estimates: Axis of Rotation'
@@ -47,10 +78,19 @@ def getTitle(mode):
 
     return title
 
-# creates box plot for error
-# mode - 0: quaternion data, 1: theta data
-# axis - only applies when mode = 0, data for x/y/z component
 def boxplot_err(err, foldername, mode, axis=0):
+    """
+    Creates box plot for error
+
+    Args:
+        err: error data
+        foldername: folder where to store plots
+        mode: quaternion or theta (rotation magnitude)
+        axis: x/y/z component
+
+    Returns:
+        None
+    """
     bar_width = 0.35
     n_groups = 13
     fig, ax = plt.subplots()
@@ -73,7 +113,7 @@ def boxplot_err(err, foldername, mode, axis=0):
     ax.legend()
     fig.tight_layout()
     plt.boxplot(err)
-    # ax.set_xticklabels(('60', '70', '80', '90', '100', '110', '120'))
+    # depends on specific experimental setup
     ax.set_xticklabels(('30', '40', '50', '60', '70', '80', '90',
                         '100', '110', '120', '130', '140', '150'))
 
@@ -90,10 +130,20 @@ def boxplot_err(err, foldername, mode, axis=0):
         filename = foldername + '/theta_boxplot.jpg'
     plt.savefig(filename)
 
-# plots mean and standard deviation
-# mode - 0: quaternion data, 1: theta data
-# axis - only applies when mode = 0, data for x/y/z component
 def mean_stddev(mean_err, std_dev_err, foldername,  mode, axis=0):
+    """
+    Plots mean and standard deviation of error
+
+    Args:
+        mean_err: average error
+        std_dev_err: standard deviation error
+        foldername: folder where to store plots
+        mode: quaternion or theta (angle magnitude)
+        axis: x/y/z component
+
+    Returns:
+        None
+    """
     # x = np.array([60, 70, 80, 90, 100, 110, 120])
     x = np.array([30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150])
     fig, ax = plt.subplots()
@@ -132,6 +182,19 @@ def mean_stddev(mean_err, std_dev_err, foldername,  mode, axis=0):
 # foldername: path of folder you want to save your plots in
 #	      can be absolute path or relative path from where you execute file
 def main():
+    """
+    Executes error visualization of rotation data
+    picklename: name of pickle file (without extension) you are reading data
+                from
+    foldername: path of folder you want to save your plots in
+	            can be absolute path or relative path to where you execute file
+
+    Args:
+        None
+
+    Returns:
+        None
+    """
     picklename = sys.argv[1]
     foldername = sys.argv[2]
 

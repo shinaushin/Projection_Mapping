@@ -4,18 +4,29 @@
 import sys
 sys.path.append('../../')
 
-import numpy as np
 import cv2
 import cv2.aruco as aruco
+from marker_setup import setup
+import math
+import matplotlib.pyplot as plt
+import numpy as np
+import pickle
+
 import pyrealsense2 as rs
 from Realsense import RealSense
-import pickle
-import math
+
 from rot_mat_euler_angles_conversion import rotToEuler
-from marker_setup import setup
-import matplotlib.pyplot as plt
 
 def main():
+    """
+    Collect angle data between adjacent detected markers. Store as pickle file
+
+    Args:
+        None
+
+    Returns:
+        None
+    """
     cam = RealSense()
     profile = cam.pipeline.start(cam.config)
     depth_sensor = profile.get_device().first_depth_sensor()
@@ -30,21 +41,30 @@ def main():
 
     if num_markers == 7:
         ground_truth = 60
-    else:
+    else: # or num markers is 5
         ground_truth = 90
 
-    data_pts = 30
+    data_pts = 30 # can be set to other number
     angle_list = []
     for i in range(data_pts):
         _, angles = setup(cam, align, marker_IDs, num_markers, comm_marker_id)
         angle_list.append([angle - ground_truth for angle in angles])
-        print(i)
+        # print(i)
 
     with open('marker_setup_test_markertool'+str(num_markers)+'.pickle', 'wb') as f:
         pickle.dump(angle_list, f)
 
 
 def plot(num_markers):
+    """
+    Plot error in angle data
+
+    Args:
+        num_markers: number of markers on digitizer
+
+    Returns:
+        None
+    """
     with open('../pickles/marker_setup_test_markertool'+str(num_markers)+'.pickle', 'rb') as f:
         angle_list = pickle.load(f)
 
@@ -62,9 +82,12 @@ def plot(num_markers):
     plt.boxplot(np.array(angle_list).T.tolist())
 
     if num_markers == 7:
-        plt.xticks([1, 2, 3, 4, 5, 6], [r'$\alpha_{12}$', r'$\alpha_{23}$', r'$\alpha_{34}$', r'$\alpha_{45}$', r'$\alpha_{56}$', r'$\alpha_{61}$'])
-    else:
-        plt.xticks([1, 2, 3, 4], [r'$\alpha_{12}$', r'$\alpha_{23}$', r'$\alpha_{34}$', r'$\alpha_{41}$'])
+        plt.xticks([1, 2, 3, 4, 5, 6], [r'$\alpha_{12}$', r'$\alpha_{23}$',
+            r'$\alpha_{34}$', r'$\alpha_{45}$', r'$\alpha_{56}$',
+            r'$\alpha_{61}$'])
+    else: # number of markers is 5
+        plt.xticks([1, 2, 3, 4], [r'$\alpha_{12}$', r'$\alpha_{23}$',
+            r'$\alpha_{34}$', r'$\alpha_{41}$'])
 
     filename = '../plots/tool'+str(num_markers)+'_boxplot.jpg'
     plt.savefig(filename)
@@ -79,12 +102,16 @@ def plot(num_markers):
 
     title = "Error in Orientation Between Consecutive Markers"
     ax.set_title(title)
-    plt.errorbar(np.arange(1, num_markers), mean_err, std_dev_err, linestyle='None', marker='o')
+    plt.errorbar(np.arange(1, num_markers), mean_err, std_dev_err,
+        linestyle='None', marker='o')
 
     if num_markers == 7:
-        plt.xticks([1, 2, 3, 4, 5, 6], [r'$\alpha_{12}$', r'$\alpha_{23}$', r'$\alpha_{34}$', r'$\alpha_{45}$', r'$    \alpha_{56}$', r'$\alpha_{61}$'])
+        plt.xticks([1, 2, 3, 4, 5, 6], [r'$\alpha_{12}$', r'$\alpha_{23}$',
+            r'$\alpha_{34}$', r'$\alpha_{45}$', r'$    \alpha_{56}$',
+            r'$\alpha_{61}$'])
     else:
-        plt.xticks([1, 2, 3, 4], [r'$\alpha_{12}$', r'$\alpha_{23}$', r'$\alpha_{34}$', r'$\alpha_{41}$'])
+        plt.xticks([1, 2, 3, 4], [r'$\alpha_{12}$', r'$\alpha_{23}$',
+            r'$\alpha_{34}$', r'$\alpha_{41}$'])
 
     filename = '../plots/tool'+str(num_markers)+'_mean_stddev.jpg'
     plt.savefig(filename)
@@ -94,4 +121,4 @@ def plot(num_markers):
 
 if __name__ == "__main__":
     # main()
-    plot(7) # 7 = number of markers on tool, unfortunately user needs to manually change
+    plot(7) # 7 = number of markers on tool

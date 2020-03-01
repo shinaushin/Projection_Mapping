@@ -1,16 +1,30 @@
+# pose_est_accuracy_eval.py
+# author: Austin Shin
+
 import sys
 sys.path.append('../../')
 
-import pickle
-import numpy as np
 import cv2
 import cv2.aruco as aruco
-import pyrealsense2 as rs
 import math
+import numpy as np
+import pickle
+
+import pyrealsense2 as rs
 from Realsense import RealSense as Realsense
+
 from rot_mat_euler_angles_conversion import rotToEuler, eulerToRot
 
 def main():
+    """
+    Collects data to evaluate accuracy of pose from Realsense
+
+    Args:
+        None
+
+    Returns:
+        None
+    """
     cam = Realsense()
 
     # object points from chessboard coordinate frame
@@ -19,9 +33,10 @@ def main():
     axis = np.float32([[1,0,0], [0,1,0], [0,0,-1]]).reshape(-1,3)
     objp = objp * 2.6 / 100.0
             
+    # set by user
     datapts = 30
     finalDeg = 150
-    deg = 30
+    deg = 30 # starting angle
 
     pos_truth = {}
     rot_vec = {}
@@ -54,27 +69,32 @@ def main():
                 color_frame = aligned_frames.get_color_frame()
                 color_image = np.asanyarray(color_frame.get_data())
                 frame = color_image
-                frame = cv2.undistort(frame, cam.mtx, cam.dist, None, cam.newcameramtx) # undistort picture based on intrinsics
-                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) # change to grayscale
-                ret, corners = cv2.findChessboardCorners(gray, (4,3), None) # corner detection
+                frame = cv2.undistort(frame, cam.mtx, cam.dist, None,
+                    cam.newcameramtx) # undistort picture based on intrinsics
+                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) # change to gray
+                ret, corners = cv2.findChessboardCorners(gray, (4,3), None)
                
                 depth = frames.get_depth_frame()
                 if ret == True:
-                    corners2 = cv2.cornerSubPix(gray, corners, (11,11), (-1,-1), cam.criteria) # subpixel refinement
-                    corners2 = corners2[::-1] # flip order of corners detected to match coordinate frame ot checkerboard with coordinate frame of camera
+                    corners2 = cv2.cornerSubPix(gray, corners, (11,11), (-1,-1),
+                        cam.criteria) # subpixel refinement
+                    # flip order of corners detected to match coordinate frame
+                    # of checkerboard with coordinate frame of camera
+                    corners2 = corners2[::-1]
                     img = cv2.drawChessboardCorners(frame, (4,3), corners2, ret)
-                    _, rvec, tvec, _ = cv2.solvePnPRansac(objp, corners2, cam.newcameramtx, cam.dist) # find pose of chessboard
+                    _, rvec, tvec, _ = cv2.solvePnPRansac(objp, corners2,
+                        cam.newcameramtx, cam.dist) # find pose of chessboard
                     
-                    ## transform center of left marker to camera coordinate system
-                    rot, _ = cv2.Rodrigues(rvec) # transform from checkerboard origin to camera
-
+                    # transform center of left marker to camera coordinate system
+                    rot, _ = cv2.Rodrigues(rvec)
                     pt = np.array([-0.073025, 0.0714375, 0]) # relative to origin of chessboard
                     tvec.shape = (1,3)
-                    markerPos = rot.dot(pt) + tvec # now in camera coordinate frame
+                    markerPos = rot.dot(pt) + tvec # now in camera frame
                     groundTruth_pos.append(markerPos[0])
                     
                     # ZYX format
-                    markerRot = np.dot(rot, eulerToRot(-math.pi/2, 0, math.pi) ) # now in camera coordinate frame
+                    # now in camera coordinate frame
+                    markerRot = np.dot(rot, eulerToRot(-math.pi/2, 0, math.pi) )
                     print(rotToEuler(markerRot))
                     markerRot, _ = cv2.Rodrigues(markerRot)
   
@@ -90,13 +110,6 @@ def main():
                         listCorners = corners[0][0]
                         center = np.mean(listCorners, axis=0)
                         dist = depth.get_distance(center[0], center[1])
-                        # print(dist)
-                        # rvecs, tvecs, _ = aruco.estimatePoseSingleMarkers(corners, 0.05, 
-                        #                       cam.newcameramtx, cam.dist)
-                        # print(tvecs)
-
-                        # for i in range(0, ids.size):
-                        #     aruco.drawAxis(img, cam.newcameramtx, cam.dist, rvecs[i], tvecs[i], 0.1)
 
                         corns = []
                         listCorners = []
@@ -108,14 +121,23 @@ def main():
                         
                         # user-measured corners of two markers on calibration board
                         # two markers = 8 points, more stability in pose estimation
-                        objpoints = [ [-0.025, 0.025, 0], [0.025, 0.025, 0], [0.025, -0.025, 0], [-0.025, -0.025, 0], 
-                                      [0.1194625, -0.1607375, 0], [0.1694625, -0.1607375, 0], [0.1694625, -0.2107375, 0], [0.1194625, -0.2107375, 0] ]
+                        objpoints = [ [-0.025, 0.025, 0],
+                                      [0.025, 0.025, 0],
+                                      [0.025, -0.025, 0],
+                                      [-0.025, -0.025, 0], 
+                                      [0.1194625, -0.1607375, 0],
+                                      [0.1694625, -0.1607375, 0],
+                                      [0.1694625, -0.2107375, 0],
+                                      [0.1194625, -0.2107375, 0] ]
                         objpoints = np.array(objpoints)
 
-                        _, rvec, tvec, _ = cv2.solvePnPRansac(objpoints, corns, cam.newcameramtx, cam.dist) # pose of left marker
-                        aruco.drawAxis(frame, cam.newcameramtx, cam.dist, rvec, tvec, 0.1)
+                        _, rvec, tvec, _ = cv2.solvePnPRansac(objpoints, corns,
+                            cam.newcameramtx, cam.dist) # pose of left marker
+                        aruco.drawAxis(frame, cam.newcameramtx, cam.dist, rvec,
+                            tvec, 0.1)
                     else:
-                        cv2.putText(img, "No Ids", (0,64), font, 1, (0,255,0),2,cv2.LINE_AA)    
+                        cv2.putText(img, "No Ids", (0,64), font, 1, (0,255,0),
+                            2, cv2.LINE_AA)    
                     
                     cv2.imshow('img', img)
                     cv2.waitKey(10)
@@ -127,30 +149,40 @@ def main():
                         y = tvec[1][0]
                         vec = [x, y, 0]
 
-                        # transform x,y coordinate of left marker to IR camera coordinate
-                        # because depth map is in coordinate system of IR camera
+                        # transform x,y coordinate of left marker to IR camera
+                        # coordinate because depth map is in coordinate system
+                        # of IR camera
                         inv_R = cam.IR_to_RGB[0:3,0:3].transpose()
                         inv_t = np.matmul(-inv_R, cam.IR_to_RGB[0:3,3])
                         vec_IR = np.matmul(inv_R, vec) + inv_t
                         x_IR = vec_IR[0]
                         y_IR = vec_IR[1]
                         # print(dist, x_IR, y_IR)
-                        z_IR = np.sqrt( dist**2 - x_IR**2 - y_IR**2  ) # calculate z value using depth,x,y values
-                        vec = [0, 0, z_IR, 1] # transform z coordinate back to RGB camera coordinate frame
+                        # calculate z value using depth,x,y values
+                        z_IR = np.sqrt( dist**2 - x_IR**2 - y_IR**2 )
+                        vec = [0, 0, z_IR, 1] # transform z back to camera frame
                         vec_RGB = np.matmul(cam.IR_to_RGB, vec)
-                        if dist != 0: # dist can be 0 because depth map has holes
+                        if dist != 0: # dist can be 0 b/c depth map has holes
                             tvec[2][0] = vec_RGB[2]
 
                         tvec = [ tvec[0][0], tvec[1][0], tvec[2][0] ]
                         # print(tvec)
                         calculated_pos.append(tvec)
 
-                        thresh = 0.115 # user-defined threshold to account for noise when looking at marker straight on
-                        if rvec[0][0] * markerRot[0][0] < 0 or rvec[1][0] * markerRot[1][0] < 0 or rvec[2][0] * markerRot[2][0] < 0: # if any component differs in sign
-                             # print(rvec[:,0] - markerRot[:,0])
-                             # if value differs by more than threshold, it is not noise and is bad PNP solution
-                             if abs(rvec[0][0] - markerRot[0][0]) > thresh or abs(rvec[1][0] - markerRot[1][0]) > thresh or abs(rvec[2][0] - markerRot[2][0]) > thresh:
-                              continue # do not append because bad PNP solution
+                        # user-defined threshold for noise when looking at
+                        # marker head on
+                        thresh = 0.115
+                        # if any component differs in sign
+                        if rvec[0][0] * markerRot[0][0] < 0 or \
+                                rvec[1][0] * markerRot[1][0] < 0 or \
+                                rvec[2][0] * markerRot[2][0] < 0:
+                            # print(rvec[:,0] - markerRot[:,0])
+                            # if value differs by more than threshold,
+                            # it is not noise and is bad PNP solution
+                            if abs(rvec[0][0] - markerRot[0][0]) > thresh or \
+                                    abs(rvec[1][0] - markerRot[1][0]) > thresh or \
+                                    abs(rvec[2][0] - markerRot[2][0]) > thresh:
+                                continue # do not append because bad PNP solution
                         
                         rotmat, _ = cv2.Rodrigues(rvec)
                         markerRotMat, _ = cv2.Rodrigues(markerRot)
@@ -162,7 +194,8 @@ def main():
                         nearIdentity_vec, _ = cv2.Rodrigues(nearIdentity)
                         # print(nearIdentity_vec)
                         vec_item.append(nearIdentity_vec)
-                        theta = math.acos( (np.trace(nearIdentity) - 1.0) / 2.0) * 180 / 3.1415 # in degrees
+                        theta = math.acos((np.trace(nearIdentity) - 1.0) / 2.0) * \
+                            180 / 3.1415 # in degs
                         print(theta)
                         theta_item.append(theta)
                             

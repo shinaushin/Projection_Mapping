@@ -1,19 +1,36 @@
+# record_points.py
+# author: Austin Shin
+
 import sys
 sys.path.append('../')
 
-import pickle
-import numpy as np
 import cv2
-import pyrealsense2 as rs
-from Realsense import RealSense as Realsense
-import math
-from rot_mat_euler_angles_conversion import rotToEuler
 import cv2.aruco as aruco
+import math
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+import numpy as np
+import pickle
+
+import pyrealsense2 as rs
+from Realsense import RealSense as Realsense
+
+from rot_mat_euler_angles_conversion import rotToEuler
 
 def find_best_marker(ids_ord, rvecs_ord, tvecs_ord, num_markers):
-    tolerance = 4
+    """
+    Finds most accurately detected marker
+
+    Args:
+        ids_ord: ordered id list of detected markers
+        rvecs_ord: rotation vectors in order of detected marker ids
+        tvecs_ord: translation vectors in order of detected marker ids
+        num_markers: number of markers on digitizer
+
+    Returns:
+        best marker ID
+    """
+    tolerance = 4 # degs; set by user
     ideal_angle = 360 / (num_markers-1)
 
     idx = -1 
@@ -48,7 +65,8 @@ def find_best_marker(ids_ord, rvecs_ord, tvecs_ord, num_markers):
             angles = angles * 180 / 3.1415
             # print(angles)
             y_angle = angles[1]
-            if y_angle < ideal_angle + tolerance and y_angle > ideal_angle - tolerance:
+            if y_angle < ideal_angle + tolerance and \
+                    y_angle > ideal_angle - tolerance:
                 if i not in acceptable_id_idx:
                     acceptable_id_idx.append(i)
                 if i+1 not in acceptable_id_idx:
@@ -74,12 +92,32 @@ def find_best_marker(ids_ord, rvecs_ord, tvecs_ord, num_markers):
                 if temp > total:
                     index = i
                     total = temp
-
         return acceptable_id_idx[index]
-
     return -1
 
-def calc_pt(corners, ids, rvecs, tvecs, frame, cam, num_markers, num_stat_markers, tf_dict, stat_tf_dict, tip):
+def calc_pt(corners, ids, rvecs, tvecs, frame, cam, num_markers,
+        num_stat_markers, tf_dict, stat_tf_dict, tip):
+    """
+    Transforms point on digitizer to be in frame of base marker on static
+    marker group
+
+    Args:
+        corners: corners of detected markers
+        ids: ids of detected markers
+        rvecs: rotation vectors of digitizer markers
+        tvecs: translation vectors of digitizer markers
+        frame: image
+        cam: Realsense parameter
+        num_markers: number of markers on digitizer
+        num_stat_markers: number of markers on static marker tool
+        tf_dict: transformation dictionary between adjacent markers for digitizer
+        stat_tf_dict: transformation dictionary between adjacent markers for
+            static marker tool
+        tip: tip point relative to digitizer coordinate frame
+
+    Returns:
+        point in coordinate frame of base marker of static marker tool
+    """
     if np.all(ids != None) and len(ids) >= 4:
         for i in range(0, ids.size):
             aruco.drawAxis(frame, cam.newcameramtx, cam.dist, rvecs[i], tvecs[i], 0.1)
@@ -121,8 +159,10 @@ def calc_pt(corners, ids, rvecs, tvecs, frame, cam, num_markers, num_stat_marker
                 print("Not enough markers detected on stationary marker on target object")
                 return []
             else:
-                best_index = find_best_marker(ids_ord, rvecs_ord, tvecs_ord, num_markers)
-                best_stat_index = find_best_marker(stat_ids_ord, stat_rvecs_ord, stat_tvecs_ord, num_stat_markers)
+                best_index = find_best_marker(ids_ord, rvecs_ord, tvecs_ord,
+                    num_markers)
+                best_stat_index = find_best_marker(stat_ids_ord, stat_rvecs_ord,
+                    stat_tvecs_ord, num_stat_markers)
         
                 if best_index != -1 and best_stat_index != -1:
                     # transform end tip from marker tool frame to camera frame
@@ -154,7 +194,8 @@ def calc_pt(corners, ids, rvecs, tvecs, frame, cam, num_markers, num_stat_marker
                     r_tf, t_tf = stat_tf_dict[stat_marker]
                     t_tf.shape = (3,1)
                     rot, _ = cv2.Rodrigues(r_tf)
-                    pt_stat_comm_marker = np.matmul(rot, pt_stat_marker_i) + t_tf
+                    pt_stat_comm_marker = np.matmul(rot, pt_stat_marker_i) + \
+                        t_tf
 
                     return pt_stat_comm_marker
                 else:
@@ -165,9 +206,27 @@ def calc_pt(corners, ids, rvecs, tvecs, frame, cam, num_markers, num_stat_marker
         return []
 
 def plot_pts(corners, ids, rvecs, tvecs, frame, cam, num_markers, tf_dict, tip):
+    """
+    Calculates non-base marker on digitizer to be with respect to camera frame
+
+    Args:
+        corners: corners of detected markers on digitizer
+        ids: detected marker IDs
+        rvecs: rotation vectors of detected markers
+        tvecs: translation vectors of detected markers
+        frame: image
+        cam: Realsense parameter
+        num_markers: number of markers on digitizer
+        tf_dict: transformation dictionary for adjacent markers on digitizer
+        tip: point of tip relative to digitizer frame
+
+    Returns:
+        point with respect to camera frame
+    """
     if np.all(ids != None) and len(ids) >= 2:
         for i in range(0, ids.size):
-            aruco.drawAxis(frame, cam.newcameramtx, cam.dist, rvecs[i], tvecs[i], 0.1)
+            aruco.drawAxis(frame, cam.newcameramtx, cam.dist, rvecs[i],
+                tvecs[i], 0.1)
         aruco.drawDetectedMarkers(frame, corners)
         ids.shape = len(ids)
         ids = ids.tolist()
@@ -182,7 +241,8 @@ def plot_pts(corners, ids, rvecs, tvecs, frame, cam, num_markers, tf_dict, tip):
             print("Not enough markers detected on marker tool")
             return []
         else:
-            best_index = find_best_marker(ids_ord, rvecs_ord, tvecs_ord, num_markers)
+            best_index = find_best_marker(ids_ord, rvecs_ord, tvecs_ord,
+                num_markers)
 
             if best_index != -1:
                 # transform end tip from marker tool frame to camera frame
@@ -211,6 +271,15 @@ def plot_pts(corners, ids, rvecs, tvecs, frame, cam, num_markers, tf_dict, tip):
              
 
 def main(onlyDisplay):
+    """
+    Begins point recording process
+
+    Args:
+        onlyDisplay: if not 0, then stores data as pickle files
+
+    Returns:
+        None
+    """
     num_markers = raw_input("How many markers are there on the tool you are using? ")
     num_markers = int(num_markers)
     marker_IDs = range(num_markers)
@@ -262,14 +331,17 @@ def main(onlyDisplay):
                 corners, ids, rvecs, tvecs = cam.detect_markers_realsense(frame)
 
                 if onlyDisplay == "0":
-                    pt_stat_comm_marker = calc_pt(corners, ids, rvecs, tvecs, frame, cam, num_markers, num_stat_markers, tf_dict, stat_tf_dict, tip)
+                    pt_stat_comm_marker = calc_pt(corners, ids, rvecs, tvecs,
+                        frame, cam, num_markers, num_stat_markers, tf_dict,
+                        stat_tf_dict, tip)
 
                     if len(pt_stat_comm_marker) != -0:
                         pts.append(pt_stat_comm_marker)
                         recorded = recorded + 1
                         print("Recorded: " + str(recorded))
                 else:
-                    pt = plot_pts(corners, ids, rvecs, tvecs, frame, cam, num_markers, tf_dict, tip)
+                    pt = plot_pts(corners, ids, rvecs, tvecs, frame, cam,
+                        num_markers, tf_dict, tip)
                     if len(pt) != 0:
                         pts.append(pt)
                         recorded = recorded + 1
@@ -283,7 +355,7 @@ def main(onlyDisplay):
     ax = fig.add_subplot(111, projection='3d')
     pts = np.array(pts)
     ax.scatter(pts[:,0], pts[:,1], pts[:,2])
-    print pts
+    print(pts)
     # plt.show()
 
     return pts

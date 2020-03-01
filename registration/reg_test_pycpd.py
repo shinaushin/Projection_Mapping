@@ -1,11 +1,24 @@
+# reg_test_pycpd.py
+# author: Austin Shin
+
 from functools import partial
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-from pycpd import rigid_registration
 import numpy as np
 import time
 
+from pycpd import rigid_registration
+
 def visualize(iteration, error, X, Y, ax):
+    """
+
+
+    Args:
+
+
+    Returns:
+
+    """
     plt.cla()
     ax.scatter(X[:,0],  X[:,1], X[:,2], color='red', label='Target')
     ax.scatter(Y[:,0],  Y[:,1], Y[:,2], color='blue', label='Source')
@@ -18,7 +31,15 @@ def visualize(iteration, error, X, Y, ax):
 # need to find appropriate way of downsampling data
 # can define threshold error in pycpd source files
 def main():
+    """
+
+
+    Args:
+
+
+    Returns:
     
+    """
     target = np.loadtxt('../data/heart_scan_processed.txt')
     source = np.loadtxt('../data/heart_scan_processed.txt')    
     

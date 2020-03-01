@@ -1,20 +1,33 @@
+# pivot_cal.py
+# author: Austin Shin
+
 import sys
 sys.path.append('../../')
 
-import math
-import numpy as np
 import cv2
 import cv2.aruco as aruco
+import math
+import numpy as np
+import pickle
+
 import pyrealsense2 as rs
-import pickle
 from Realsense import RealSense
+
 from rot_mat_euler_angles_conversion import rotToEuler
-import pickle
 
 # saved as [0.00812451 -0.00558087 -0.21730515] N = 10
 
 def calibrate(cam, align, marker_IDs, num_markers, comm_marker_id, tf_dict, num_pts):
-    tolerance = 4
+    """
+
+
+    Args:
+
+
+    Returns:
+
+    """
+    tolerance = 4 # degs; set by user
 
     aruco_dict = aruco.Dictionary_get(aruco.DICT_6X6_250)
     parameters = aruco.DetectorParameters_create()
@@ -56,13 +69,16 @@ def calibrate(cam, align, marker_IDs, num_markers, comm_marker_id, tf_dict, num_
                     angles = rotToEuler(rot_btw_1_2)
                     y_angle = np.absolute(angles[1])*180/3.1415
                     print(y_angle)
-                    if (np.absolute(ids[i] - ids[j]) > 1 and np.absolute(ids[i] - ids[j]) < num_markers-2) or y_angle < ideal_angle - tolerance or y_angle > ideal_angle + tolerance:
+                    if (np.absolute(ids[i] - ids[j]) > 1 and \
+                            np.absolute(ids[i] - ids[j]) < num_markers-2) or \
+                            y_angle < ideal_angle - tolerance or \
+                            y_angle > ideal_angle + tolerance:
                         shouldRecord = False
                         print("Bad orientation found")
                         break
 
                 if shouldRecord:
-                    if comm_marker_id in ids: # if comm_marker_id is detected, use that point
+                    if comm_marker_id in ids: # if comm_marker_id detected, use point
                         comm_index = ids.index(comm_marker_id)
                         R_j, _ = cv2.Rodrigues(rvecs[comm_index])
                         t_j = tvecs[comm_index]
@@ -82,7 +98,8 @@ def calibrate(cam, align, marker_IDs, num_markers, comm_marker_id, tf_dict, num_
                         t_i = tvecs[0]
                         t_i.shape = (3,1)
 
-                        # combine transformation tgoether to get transformation from comm_marker_id to camera frame
+                        # combine transformation tgoether to get transformation
+                        # from comm_marker_id to camera frame
                         R_j = np.matmul(R_i, R_comm_i)
                         t_j = np.matmul(R_i, t_comm_i) + t_i
                         t_j.shape = (3)
@@ -115,6 +132,15 @@ def calibrate(cam, align, marker_IDs, num_markers, comm_marker_id, tf_dict, num_
     return x[0:3]
 
 def main():
+    """
+    Receives user input and begins calibration
+
+    Args:
+        None
+
+    Returns:
+        None
+    """
     cam = RealSense()
     profile = cam.pipeline.start(cam.config)
     depth_sensor = profile.get_device().first_depth_sensor()
@@ -134,10 +160,11 @@ def main():
     num_pts = raw_input("How many pivot calibration points do you want to use? ")
     num_pts = int(num_pts)
 
-    x = calibrate(cam, align, marker_IDs, num_markers, comm_marker_id, tf_dict, num_pts)
+    x = calibrate(cam, align, marker_IDs, num_markers, comm_marker_id, tf_dict,
+        num_pts)
 
     with open('../pickles/test_pivot_cal_markertool'+str(num_markers)+'.pickle', 'wb') as f:
-        pickle.dump(x, f);
+        pickle.dump(x, f)
 
 if __name__ == "__main__":
     main()
